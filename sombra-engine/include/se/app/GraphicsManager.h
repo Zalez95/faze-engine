@@ -14,6 +14,7 @@ namespace se::app {
 
 	struct Entity;
 	class ResizeEvent;
+	class CollisionEvent;
 
 
 	/**
@@ -47,11 +48,15 @@ namespace se::app {
 		std::map<Entity*, Renderable3DUPtr> mSkyEntities;
 		std::map<Entity*, RenderableTerrainUPtr> mRenderableTerrainEntities;
 
+		std::vector<Renderable3DUPtr> mOtherRenderable3Ds;
+		std::shared_ptr<se::graphics::Mesh> mCubeMesh, mTetrahedronMesh;
+		std::shared_ptr<se::graphics::Material> mYellowMaterial, mBlueMaterial, mRedMaterial;
+
 	public:		// Functions
 		/** Creates a new GraphicsManager
 		 *
 		 * @param	graphicsSystem a reference to the GraphicsSystem used by
-		 * 			the GraphicsManager to render the entities
+		 *			the GraphicsManager to render the entities
 		 * @param	eventManager a reference to the EventManager that the
 		 *			GraphicsManager will be subscribed to */
 		GraphicsManager(
@@ -133,6 +138,11 @@ namespace se::app {
 		 *
 		 * @param	event the ResizeEvent to handle */
 		void onResizeEvent(const ResizeEvent& event);
+
+		/** Handles the given CollisionEvent
+		 *
+		 * @param	event the CollisionEvent to handle */
+		void onCollisionEvent(const CollisionEvent& event);
 	};
 
 }

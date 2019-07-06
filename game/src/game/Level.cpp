@@ -396,9 +396,9 @@ namespace game {
 		config1.angularDrag = 0.01f;
 		config1.frictionCoefficient = 1.16f;
 		auto rigidBody1 = std::make_unique<se::physics::RigidBody>(config1, se::physics::RigidBodyData());
-		auto collider1 = std::make_unique<se::collision::BoundingSphere>(0.5f);
-		mGameData.collisionManager->addEntity(mPlayerEntity, std::move(collider1));
 		mGameData.physicsManager->addEntity(mPlayerEntity, std::move(rigidBody1));
+		//auto collider1 = std::make_unique<se::collision::BoundingSphere>(0.5f);
+		//mGameData.collisionManager->addEntity(mPlayerEntity, std::move(collider1));
 
 		mGameData.graphicsManager->addCameraEntity(mPlayerEntity, std::move(camera1));
 		mGameData.graphicsManager->addLightEntity(mPlayerEntity, std::move(pointLight1));
@@ -411,7 +411,7 @@ namespace game {
 		mEntities.push_back(std::move(skyEntity));
 
 		// Terrain
-		auto terrainMaterial = std::make_shared<se::graphics::SplatmapMaterial>();
+		/*auto terrainMaterial = std::make_shared<se::graphics::SplatmapMaterial>();
 		terrainMaterial->splatmapTexture = std::make_shared<se::graphics::Texture>();
 		terrainMaterial->splatmapTexture->setImage(splatMap1.pixels.get(), se::graphics::TypeId::UnsignedByte, se::graphics::ColorFormat::RGBA, splatMap1.width, splatMap1.height);
 		terrainMaterial->materials.push_back({ se::graphics::PBRMetallicRoughness{ { 0.5f, 0.25f, 0.1f, 1.0f }, nullptr, 0.2f, 0.5f, nullptr }, nullptr, 1.0f });
@@ -491,7 +491,7 @@ namespace game {
 		}
 
 		mConstraints.push_back(new se::physics::DistanceConstraint({ rb1, rb2 }));
-		mGameData.physicsEngine->getConstraintManager().addConstraint(mConstraints.back());
+		mGameData.physicsEngine->getConstraintManager().addConstraint(mConstraints.back());*/
 
 		{
 			std::shared_ptr<se::graphics::Material> redMaterial(new se::graphics::Material{
@@ -501,7 +501,6 @@ namespace game {
 			});
 
 			auto nonMovableCube = std::make_unique<se::app::Entity>("non-movable-cube");
-			nonMovableCube->position = glm::vec3(-50.0f, 0.0f, -40.0f);
 			nonMovableCube->scale = glm::vec3(10.0f, 1.0f, 10.0f);
 
 			se::physics::RigidBodyConfig config2(0.001f);
@@ -517,7 +516,7 @@ namespace game {
 			mEntities.push_back(std::move(nonMovableCube));
 
 			auto gravityCube = std::make_unique<se::app::Entity>("gravity-cube");
-			gravityCube->position = glm::vec3(-50.0f, 2.0f, -40.0f);
+			gravityCube->position = glm::vec3(0.0f, 2.0f, 0.0f);
 
 			se::physics::RigidBodyConfig config3(20.0f, 2.0f / 5.0f * 10.0f * glm::pow(2.0f, 2.0f) * glm::mat3(1.0f), 0.001f);
 			config3.linearDrag = 0.95f;
@@ -538,7 +537,7 @@ namespace game {
 		}
 
 		// HACD Tube
-		se::collision::HalfEdgeMesh tube = createTestTube1();
+		/*se::collision::HalfEdgeMesh tube = createTestTube1();
 		glm::vec3 tubeCentroid = se::collision::calculateCentroid(tube);
 		hacd.calculate(tube);
 		for (const auto& [heMesh, normals] : hacd.getMeshes()) {
@@ -588,7 +587,7 @@ namespace game {
 			mGameData.graphicsManager->addRenderableEntity(cube.get(), std::move(renderable3D2));
 
 			mEntities.push_back(std::move(cube));
-		}
+		}*/
 
 		// Lights
 		std::shared_ptr<se::graphics::Material> lightMaterial(new se::graphics::Material{
@@ -612,7 +611,7 @@ namespace game {
 		mEntities.push_back(std::move(eL3));
 
 		// GLTF Scene
-		auto sceneEntity = std::make_unique<se::app::Entity>("Scene");
+		/*auto sceneEntity = std::make_unique<se::app::Entity>("Scene");
 		mGameData.animationManager->addEntity(sceneEntity.get(), std::move(loadedScenes.scenes[0]->rootNode));
 		mEntities.push_back( std::move(sceneEntity) );
 
@@ -638,7 +637,7 @@ namespace game {
 
 				mEntities.push_back( std::move(entity) );
 			}
-		}
+		}*/
 
 		setHandleInput(true);
 	}

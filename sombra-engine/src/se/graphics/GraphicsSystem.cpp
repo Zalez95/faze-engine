@@ -90,7 +90,7 @@ namespace se::graphics {
 
 	void GraphicsSystem::render()
 	{
-		GL_WRAP( glClear(GL_DEPTH_BUFFER_BIT) );
+		GL_WRAP( glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT) );
 
 		for (ILayer* layer : mLayers) {
 			layer->render();
