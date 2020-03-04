@@ -372,8 +372,8 @@ namespace game {
 		config1.angularDrag = 0.01f;
 		config1.frictionCoefficient = 1.16f;
 		auto rigidBody1 = std::make_unique<se::physics::RigidBody>(config1, se::physics::RigidBodyData());
-		auto collider1 = std::make_unique<se::collision::BoundingSphere>(0.5f);
-		mGameData.collisionManager->addEntity(mPlayerEntity, std::move(collider1));
+		//auto collider1 = std::make_unique<se::collision::BoundingSphere>(0.5f);
+		//mGameData.collisionManager->addEntity(mPlayerEntity, std::move(collider1));
 		mGameData.physicsManager->addEntity(mPlayerEntity, std::move(rigidBody1));
 
 		mGameData.graphicsManager->addCameraEntity(mPlayerEntity, std::move(camera1));
@@ -395,6 +395,12 @@ namespace game {
 		terrainMaterial->materials.push_back({ se::graphics::PBRMetallicRoughness{ { 0.1f, 0.25f, 0.75f, 1.0f }, nullptr, 0.2f, 0.5f, nullptr }, nullptr, 1.0f });
 
 		std::vector<float> lodDistances{ 2000.0f, 1000.0f, 500.0f, 250.0f, 125.0f, 75.0f, 40.0f, 20.0f, 10.0f, 0.0f };
+		heightMap1.pixels.get()[0] = static_cast<std::byte>(0);
+		heightMap1.pixels.get()[1] = static_cast<std::byte>(0);
+		heightMap1.pixels.get()[2] = static_cast<std::byte>(0);
+		heightMap1.pixels.get()[3] = static_cast<std::byte>(0);
+		heightMap1.width = 2;
+		heightMap1.height = 2;
 		mEntities.push_back( terrainLoader.createTerrain("terrain", 500.0f, 10.0f, heightMap1, lodDistances, terrainMaterial) );
 
 		// Plane
@@ -552,6 +558,7 @@ namespace game {
 			auto rigidBody2 = std::make_unique<se::physics::RigidBody>(config2, se::physics::RigidBodyData());
 			auto collider2 = std::make_unique<se::collision::BoundingBox>(glm::vec3(1.0f, 1.0f, 1.0f));
 			mGameData.collisionManager->addEntity(cube.get(), std::move(collider2));
+			mGameData.physicsEngine->getForceManager().addRBForce(rigidBody2.get(), gravity);
 			mGameData.physicsManager->addEntity(cube.get(), std::move(rigidBody2));
 
 			auto renderable3D2 = std::make_unique<se::graphics::Renderable3D>(cubeMesh, nullptr);
@@ -669,7 +676,7 @@ namespace game {
 	void Level::setHandleInput(bool handle)
 	{
 		if (handle && !mPlayerController) {
-			mPlayerController = new PlayerController(*mPlayerEntity, *mGameData.eventManager, *mGameData.windowSystem);
+			mPlayerController = new PlayerController(*mPlayerEntity, *mGameData.eventManager, *mGameData.windowSystem, *mGameData.collisionManager);
 			mPlayerController->resetMousePosition();
 			mGameData.windowSystem->setCursorVisibility(false);
 		}
