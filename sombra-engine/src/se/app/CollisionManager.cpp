@@ -3,8 +3,6 @@
 #include "se/app/Entity.h"
 #include "se/app/CollisionManager.h"
 #include "se/app/events/CollisionEvent.h"
-#include "se/collision/ConvexCollider.h"
-#include "se/collision/GJKRayCaster.h"
 
 namespace se::app {
 
@@ -86,18 +84,23 @@ namespace se::app {
 	}
 
 
-	std::string CollisionManager::getName(const glm::vec3& rayOrigin, const glm::vec3& rayDirection)
+	std::vector<CollisionManager::EntityRayCastPair> CollisionManager::getEntities(
+		const glm::vec3& rayOrigin, const glm::vec3& rayDirection
+	) const
 	{
-		collision::GJKRayCaster gjk(0.0001f);
-		for (auto& pair : mColliderEntityMap) {
-			if (auto collider = dynamic_cast<const collision::ConvexCollider*>(pair.first)) {
-				bool intersects = gjk.calculateRayCast(rayOrigin, rayDirection, *collider).first;
-				if (intersects) {
-					return pair.second->name;
+		std::vector<std::pair<Entity*, collision::RayCast>> ret;
+
+		mCollisionWorld.processRayCast(
+			rayOrigin, rayDirection,
+			[&](const collision::Collider& collider, const collision::RayCast& rayCast) {
+				auto it = mColliderEntityMap.find(&collider);
+				if (it != mColliderEntityMap.end()) {
+					ret.emplace_back(it->second, rayCast);
 				}
 			}
-		}
-		return "";
+		);
+
+		return ret;
 	}
 
 }
