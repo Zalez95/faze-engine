@@ -4,33 +4,40 @@
 namespace se::utils {
 
 	SubTaskSet::SubTaskSet(
-		TaskManager& taskManager, const FuncSTS& initialFunction, const FuncSTS& finalFunction, bool join
-	) : mTaskManager(taskManager), mInitialTaskId(-1), mFinalTaskId(-1), mJoinTasks(join)
+		TaskManager& taskManager, const FuncSTS& initialFunction, const FuncTask& finalFunction, bool join
+	) : mTaskManager(taskManager),
+		mInitialTaskId(mTaskManager.create()), mInitialTaskFunction(initialFunction),
+		mFinalTaskId(mTaskManager.create()), mFinalTaskFunction(finalFunction),
+		mJoinTasks(join)
 	{
 		mTasks.reserve(mTaskManager.getMaxTasks());
 		mSubTaskSets.reserve(mTaskManager.getMaxTasks() / 2);
 
-		mInitialTaskId = (initialFunction)?
-			mTaskManager.create([this, initialFunction]() { initialFunction(*this); submitCreatedTasks(); }) :
-			mTaskManager.create([this]() { submitCreatedTasks(); });
-		mFinalTaskId = finalFunction?
-			mTaskManager.create([this, finalFunction]() { finalFunction(*this); }) :
-			mTaskManager.create([]() {});
-		mTaskManager.addDependency(mFinalTaskId, mInitialTaskId);
+		if (*this) {
+			depends(mFinalTaskId, mInitialTaskId);
+		}
 
 		SOMBRA_TRACE_LOG << "Set[" << this << "] Created SubTaskSet with InitialTask " << mInitialTaskId
 			<< ", FinalTask " << mFinalTaskId << " and join " << mJoinTasks;
 	}
 
 
-	TaskId SubTaskSet::createTask(const FuncTask& function)
+	SubTaskSet::operator bool() const
 	{
-		TaskId taskId = mTaskManager.create(function);
-		if (taskId >= 0) {
-			mTasks.push_back(taskId);
+		return (mInitialTaskId >= 0) && (mFinalTaskId >= 0);
+	}
 
+
+	TaskId SubTaskSet::createTask(const FuncTask& function, int threadNumber)
+	{
+		TaskId taskId = mTasks.emplace_back(mTaskManager.create(function));
+		if (taskId >= 0) {
 			if (mJoinTasks) {
-				mTaskManager.addDependency(mFinalTaskId, taskId);
+				depends(mFinalTaskId, taskId);
+			}
+
+			if (threadNumber >= 0) {
+				mTaskManager.setThreadAffinity(taskId, threadNumber);
 			}
 		}
 
@@ -41,12 +48,14 @@ namespace se::utils {
 
 	SubTaskSet& SubTaskSet::createSubTaskSet(const FuncSTS& function, bool join)
 	{
-		SubTaskSet& ret = mSubTaskSets.emplace_back(mTaskManager, function, FuncSTS(), join);
-		if (mJoinTasks) {
-			mTaskManager.addDependency(mFinalTaskId, ret.mFinalTaskId);
+		SubTaskSet& ret = mSubTaskSets.emplace_back(mTaskManager, function, FuncTask(), join);
+		if (ret) {
+			if (mJoinTasks) {
+				depends(mFinalTaskId, ret.mFinalTaskId);
+			}
 		}
 
-		SOMBRA_TRACE_LOG << "Set[" << this << "] Added SubTaskSet " << &ret;
+		SOMBRA_TRACE_LOG << "Set[" << this << "] Added SubTaskSet with InitialTask " << ret.mInitialTaskId;
 		return ret;
 	}
 
@@ -79,7 +88,26 @@ namespace se::utils {
 	{
 		SOMBRA_TRACE_LOG << "Set[" << this << "] Start";
 
+		// Set the initial task function with a copy of the current SubTaskSet
+		if (mInitialTaskFunction) {
+			mTaskManager.setTaskFunction(mInitialTaskId, [tmp = *this]() mutable {
+				tmp.mInitialTaskFunction(tmp);
+				tmp.submitCreatedTasks();
+			});
+		}
+		else {
+			mTaskManager.setTaskFunction(mInitialTaskId, [tmp = *this]() mutable {
+				tmp.submitCreatedTasks();
+			});
+		}
 		mTaskManager.submit(mInitialTaskId);
+
+		// Set the final task function with a copy of the current SubTaskSet
+		if (mFinalTaskFunction) {
+			mTaskManager.setTaskFunction(mFinalTaskId, [tmp = *this]() {
+				tmp.mFinalTaskFunction();
+			});
+		}
 		mTaskManager.submit(mFinalTaskId);
 
 		SOMBRA_TRACE_LOG << "Set[" << this << "] End";
@@ -91,28 +119,37 @@ namespace se::utils {
 		SOMBRA_TRACE_LOG << "Set[" << this << "] Start";
 
 		for (auto& taskId : mTasks) {
-			mTaskManager.submit(taskId);
+			if (taskId >= 0) {
+				mTaskManager.submit(taskId);
+			}
 		}
+
 		for (auto& subSet : mSubTaskSets) {
-			subSet.submitSubTaskSetTasks();
+			if (subSet) {
+				subSet.submitSubTaskSetTasks();
+			}
 		}
 
 		SOMBRA_TRACE_LOG << "Set[" << this << "] End";
 	}
 
 
-	TaskSet::TaskSet(TaskManager& taskManager) :
+	TaskSet::TaskSet(TaskManager& taskManager, bool join) :
 		SubTaskSet(
 			taskManager,
 			FuncSTS(),
-			[](SubTaskSet& set) { dynamic_cast<TaskSet*>(&set)->mCV.notify_all(); },
-			true
+			join? [this]() { mCV.notify_all(); } : FuncTask(),
+			join
 		) {}
 
 
 	void TaskSet::submit()
 	{
+		SOMBRA_TRACE_LOG << "Set[" << this << "] Start";
+
 		SubTaskSet::submitSubTaskSetTasks();
+
+		SOMBRA_TRACE_LOG << "Set[" << this << "] End";
 	}
 
 

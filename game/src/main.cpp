@@ -33,5 +33,5 @@ void operator delete(void* ptr, std::size_t size) noexcept
 int main()
 {
 	game::Game miGame;
-	miGame.start();
+	miGame.run();
 }

@@ -1,13 +1,15 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
+#include <chrono>
+
 namespace se::window { struct WindowData; class WindowSystem; }
 namespace se::graphics { struct GraphicsData; class GraphicsEngine; }
 namespace se::physics { class PhysicsEngine; }
 namespace se::collision { struct CollisionWorldData; class CollisionWorld; }
 namespace se::animation { class AnimationSystem; }
 namespace se::audio { class AudioEngine; }
-namespace se::utils { class TaskManager; }
+namespace se::utils { class TaskManager; class SubTaskSet; }
 
 namespace se::app {
 
@@ -92,32 +94,40 @@ namespace se::app {
 		/** Class destructor */
 		virtual ~Application();
 
-		/** Function used for starting the Application
+		/** Function used for running the Application
 		 * @note	the current thread will be used by the Application until
-		 *			@see end is called */
-		void start();
+		 *			@see stop is called */
+		void run();
 
 		/** Function used for stopping the Application */
 		void stop();
-	protected:
-		/** Runs the Application
+	private:
+		/** The function that is going to be called at each frame. It will also
+		 * create a task for executing the next frame until @see mStopRunning
+		 * is set to true.
 		 *
-		 * @return	true if the Application exited succesfully, false
-		 *			otherwise */
-		bool run();
+		 * @param	lastTp the time point of the last frame executed */
+		void frameTask(std::chrono::high_resolution_clock::time_point lastTp);
+	protected:
+		/** Retrieves all the user input
+		 *
+		 * @param	subTaskSet the SubTaskSet where all the input tasks are
+		 *			going to be submitted */
+		virtual void input(utils::SubTaskSet& subTaskSet);
 
-		/** Retrieves all the user input */
-		virtual void onInput();
-
-		/** Updates the Application managers and systems each main loop
-		 * iteration
+		/** Updates all the Application Managers
 		 *
 		 * @param	deltaTime the elapsed time since the last update in
-		 *			seconds */
-		virtual void onUpdate(float deltaTime);
+		 *			seconds
+		 * @param	subTaskSet the SubTaskSet where all the update tasks are
+		 *			going to be submitted */
+		virtual void update(float deltaTime, utils::SubTaskSet& subTaskSet);
 
-		/** Draws to screen */
-		virtual void onRender();
+		/** Draws to screen
+		 *
+		 * @param	subTaskSet the SubTaskSet where all the render tasks are
+		 *			going to be submitted */
+		virtual void render(utils::SubTaskSet& subTaskSet);
 	};
 
 }

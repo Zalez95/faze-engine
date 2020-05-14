@@ -6,7 +6,7 @@
 #include <vector>
 #include <functional>
 
-namespace se::app {
+namespace se::utils {
 
 	/**
 	 * Class ComponentDatabase. It holds all the Components of the Entities
@@ -17,7 +17,7 @@ namespace se::app {
 	public:		// Nested types
 		using EntityId = SizeType;
 		using size_type = SizeType;
-		using ActiveColumns = std::bitset<sizeof...(Types)>;
+		using ActiveComponents = std::bitset<sizeof...(Types)>;
 		using EntityCallback = std::function<void(EntityId)>;
 
 	private:	// Attributes
@@ -32,7 +32,7 @@ namespace se::app {
 
 		/** A vector of bitsets that tells which of the Components are active
 		 * for each of the Entities */
-		std::vector<ActiveColumns> mActiveComponents;
+		std::vector<ActiveComponents> mActiveComponents;
 
 		/** The components of the Entities */
 		std::tuple< std::vector<Types>... > mComponents;
@@ -100,7 +100,7 @@ namespace se::app {
 		 *			doesn't get omitted while iterating, all by default */
 		void processEntities(
 			const EntityCallback& callback,
-			ActiveColumns filters = ActiveColumns().set()
+			ActiveComponents filters = ActiveColumns().set()
 		) const;
 	};
 

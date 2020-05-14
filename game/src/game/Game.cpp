@@ -2,6 +2,7 @@
 #include <se/utils/Log.h>
 #include <se/app/loaders/FontReader.h>
 #include <se/app/GraphicsManager.h>
+#include <se/utils/TaskSet.h>
 #include <se/graphics/GraphicsEngine.h>
 #include "Game.h"
 #include "Level.h"
@@ -170,24 +171,29 @@ namespace game {
 	}
 
 // Private functions
-	void Game::onUpdate(float deltaTime)
+	void Game::update(float deltaTime, se::utils::SubTaskSet& subTaskSet)
 	{
 		SOMBRA_DEBUG_LOG << "Init (" << deltaTime << ")";
 
-		mAccumulatedTime += deltaTime;
-		mNumFrames++;
-		if (mAccumulatedTime > 1.0f) {
-			mGameData.fpsText->setText(std::to_string(mNumFrames));
-			mAccumulatedTime = 0.0f;
-			mNumFrames = 0;
-		}
+		subTaskSet.createTask(
+			[this, deltaTime]() {
+				mAccumulatedTime += deltaTime;
+				mNumFrames++;
+				if (mAccumulatedTime > 1.0f) {
+					mGameData.fpsText->setText(std::to_string(mNumFrames));
+					mAccumulatedTime = 0.0f;
+					mNumFrames = 0;
+				}
 
-		mGameData.stateMachine->handleEvents();
-		for (auto& screen : mGameData.currentGameScreens) {
-			screen->update(deltaTime);
-		}
+				mGameData.stateMachine->handleEvents();
+				for (auto& screen : mGameData.currentGameScreens) {
+					screen->update(deltaTime);
+				}
+			},
+			0
+		);
 
-		Application::onUpdate(deltaTime);
+		Application::update(deltaTime, subTaskSet);
 	}
 
 }

@@ -20,7 +20,7 @@ TEST(TaskSet, taskSet1)
 	});
 	auto C = set.createTask([&]() { std::unique_lock lock(mMutex); mTaskOrder.emplace_back("C"); });
 	auto D = set.createTask([&]() { std::unique_lock lock(mMutex); mTaskOrder.emplace_back("D"); });
-	auto E = set.createTask([&]() { std::unique_lock lock(mMutex); mTaskOrder.emplace_back("E"); });
+	auto E = set.createTask([&]() { std::unique_lock lock(mMutex); mTaskOrder.emplace_back("E"); tmana.stop(); });
 
 	set.depends(B, A);
 	set.depends(C, A);
@@ -28,7 +28,9 @@ TEST(TaskSet, taskSet1)
 	set.depends(D, C);
 	set.depends(E, D);
 
-	set.submitAndWait();
+	set.submit();
+
+	tmana.run();
 
 	EXPECT_EQ(static_cast<int>(mTaskOrder.size()), 7);
 	int iB2_1 = -1;

@@ -1,7 +1,7 @@
 #ifndef COMPONENT_DATABASE_HPP
 #define COMPONENT_DATABASE_HPP
 
-namespace se::app {
+namespace se::utils {
 
 	template <typename SizeType, typename... Types>
 	ComponentDatabase<SizeType, Types...>::ComponentDatabase(SizeType maxEntities) : mMaxEntities(maxEntities)
@@ -91,7 +91,7 @@ namespace se::app {
 
 
 	template <typename SizeType, typename... Types>
-	void ComponentDatabase<SizeType, Types...>::processEntities(const EntityCallback& callback, ActiveColumns filters) const
+	void ComponentDatabase<SizeType, Types...>::processEntities(const EntityCallback& callback, ActiveComponents filters) const
 	{
 		EntityId entityId = 0;
 		while (entityId < mActiveComponents.size()) {

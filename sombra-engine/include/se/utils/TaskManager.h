@@ -22,6 +22,8 @@ namespace se::utils {
 	class TaskManager
 	{
 	private:	// Nested types
+		using TaskFunction = std::function<void()>;
+
 		/** The different states in which a Task can be */
 		enum class TaskState { Created, Submitted, Running, Released };
 
@@ -29,17 +31,21 @@ namespace se::utils {
 		 * task dependencies are finished */
 		struct Task
 		{
-			/** The function to execute */
-			std::function<void()> function;
-
 			/** The current state of the Task */
 			TaskState state = TaskState::Released;
+
+			/** The function to execute */
+			TaskFunction function;
 
 			/** The number of task dependencies of the current one */
 			int remainingTasks = 0;
 
 			/** The tasks that depends on the current one */
 			std::vector<TaskId> dependentTasks;
+
+			/** The thread where the task must be executed, if it's less than 0
+			 * the Task doesn't have thread affinity */
+			int threadAffinity = -1;
 
 			/** Atomic flag used as lock for accessing to all the properties */
 			std::atomic_flag lock = ATOMIC_FLAG_INIT;
@@ -83,14 +89,46 @@ namespace se::utils {
 
 		/** @return	the maximum number of tasks that can be created with the
 		 *			TaskManager */
-		int getMaxTasks() const { return static_cast<int>(mTasks.size()); };
+		int getMaxTasks() const
+		{ return static_cast<int>(mTasks.size()); };
+
+		/** @return	the number of threads of the TaskManager */
+		int getNumThreads() const
+		{ return static_cast<int>(mThreads.size()) + 1; };
+
+		/** Starts Running the TaskManager
+		 *
+		 * @note	the current thread will be used as thread number 0 until
+		 *			the TaskManager has stopped */
+		void run();
+
+		/** Asks the TaskManager to stop */
+		void stop();
 
 		/** Creates a new Task
 		 *
 		 * @param	function the function to call when the task is ready to be
 		 *			executed
-		 * @return	the id of the new Task, -1 if it couldn't be created */
-		TaskId create(const std::function<void()>& function);
+		 * @return	the id of the new Task, -1 if it couldn't be created
+		 * @note	the new Task won't have any dependencies nor thread
+		 *			affinity */
+		TaskId create(const TaskFunction& function = TaskFunction());
+
+		/** Sets the function to call when the given task is ready to be
+		 * executed
+		 *
+		 * @param	taskId the task to set its function
+		 * @param	function the new function to call */
+		void setTaskFunction(TaskId taskId, const TaskFunction& function);
+
+		/** Sets the thread where the given task must be executed
+		 *
+		 * @param	taskId the task to set its affinity
+		 * @param	threadNumber the number of the thread where the task must
+		 *			be executed
+		 * @note	if the given thread number isn't a valid the current
+		 *			affinity of the Task won't be changed */
+		void setThreadAffinity(TaskId taskId, int threadNumber);
 
 		/** Adds a dependency between the given tasks
 		 *
@@ -106,17 +144,20 @@ namespace se::utils {
 		void submit(TaskId taskId);
 	private:
 		/** Executes the tasks submitted to the @see mWorkingQueue until
-		 * @see mEnd is setted to true */
-		void thRun();
+		 * @see mEnd is setted to true
+		 *
+		 * @param	threadNumber the number of the current thread */
+		void thRun(int threadNumber);
 
 		/** Returns a taskId from @see mWorkingQueue that is ready to be
-		 * executed
+		 * executed in the current thread
 		 *
+		 * @param	threadNumber the number of the current thread
 		 * @return	the TaskId of the Task that can be executed, -1 if there's
 		 *			no such a Task
 		 * @note	the mutex @see mMutex must have been locked before calling
 		 *			this function. The Task state will be updated to Running */
-		TaskId getTaskId();
+		TaskId getTaskId(int threadNumber);
 
 		/** Releases the given Task and notifies the dependent tasks of the
 		 * given one that it already finished its job

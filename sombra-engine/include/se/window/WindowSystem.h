@@ -149,7 +149,9 @@ namespace se::window {
 		);
 
 		/** Retrieves the window events and Sets the pressed keys by the
-		 * user to the Entity that the System must update */
+		 * user to the Entity that the System must update
+		 *
+		 * @note	this function must be called from the Main thread */
 		void update();
 
 		/** Swaps the front and back buffers of the window.

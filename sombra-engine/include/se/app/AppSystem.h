@@ -1,14 +1,14 @@
 #ifndef APP_SYSTEM_H
 #define APP_SYSTEM_H
 
-#include "ComponentDatabase.h"
-#include "TransformsComponent.h"
-#include "graphics/Camera.h"
-#include "graphics/Lights.h"
+#include "../utils/ComponentDatabase.h"
 #include "../utils/Repository.h"
 #include "../graphics/3d/Renderable3D.h"
 #include "../animation/AnimationNode.h"
 #include "../physics/RigidBody.h"
+#include "TransformsComponent.h"
+#include "graphics/Camera.h"
+#include "graphics/Lights.h"
 
 namespace se::app {
 
@@ -29,7 +29,7 @@ namespace se::app {
 	/**
 	 * Class AppComponentDB
 	 */
-	class AppComponentDB : public ComponentDatabase<
+	class AppComponentDB : public utils::ComponentDatabase<
 		unsigned short,
 		NameComponent,
 		TransformsComponent,

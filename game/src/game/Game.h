@@ -88,12 +88,18 @@ namespace game {
 		/** Class destructor */
 		~Game();
 	protected:
-		/** Updates the Game managers and systems each main loop
-		 * iteration
+		/** Creates all the tasks needed form updating the Game Managers
+		 * and submits them to the given SubTaskSet
 		 *
 		 * @param	deltaTime the elapsed time since the last update in
-		 *			seconds */
-		virtual void onUpdate(float deltaTime) override;
+		 *			seconds
+		 * @param	subTaskSet the SubTaskSet where all the update tasks are
+		 *			going to be submitted
+		 * @note	this function must be called from the TaskManager's
+		 *			thread 0 */
+		virtual void update(
+			float deltaTime, se::utils::SubTaskSet& subTaskSet
+		) override;
 	};
 
 }

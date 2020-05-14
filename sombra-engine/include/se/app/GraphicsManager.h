@@ -197,14 +197,12 @@ namespace se::app {
 
 		/** Updates the graphics data with the Entities
 		 *
-		 * @note	this function must be called from the thread with the
-		 *			Graphics API context (probably thread 0) */
+		 * @note	this function must be called from the Main thread */
 		void update();
 
 		/** Renders the graphics data of the Entities
 		 *
-		 * @note	this function must be called from the thread with the
-		 *			Graphics API context (probably thread 0) */
+		 * @note	this function must be called from the Main thread */
 		void render();
 	private:
 		/** Handles the given ResizeEvent by notifying the GraphicsEngine of

@@ -1,4 +1,3 @@
-#include <chrono>
 #include <thread>
 #include "se/utils/Log.h"
 #include "se/window/WindowSystem.h"
@@ -95,11 +94,22 @@ namespace se::app {
 	}
 
 
-	void Application::start()
+	void Application::run()
 	{
 		SOMBRA_INFO_LOG << "Starting the Application";
+		mState = AppState::Running;
 
-		run();
+		utils::TaskSet initialTaskSet(*mTaskManager, false);
+		initialTaskSet.createTask([this]() {
+			auto currentTp = std::chrono::high_resolution_clock::now();
+			frameTask(currentTp);
+		});
+		initialTaskSet.submit();
+
+		mTaskManager->run();
+
+		mState = AppState::Stopped;
+		SOMBRA_INFO_LOG << "Application stopped";
 	}
 
 
@@ -113,92 +123,73 @@ namespace se::app {
 	}
 
 // Private functions
-	bool Application::run()
+	void Application::frameTask(std::chrono::high_resolution_clock::time_point lastTp)
 	{
-		SOMBRA_INFO_LOG << "Start running";
+		if (mStopRunning) { return; }
 
-		if (mState != AppState::Stopped) {
-			SOMBRA_ERROR_LOG << "Bad initial state";
-			return false;
-		}
+		auto currentTp = std::chrono::high_resolution_clock::now();
 
-		/*********************************************************************
-		 * MAIN LOOP
-		 *********************************************************************/
-		mState = AppState::Running;
-		mStopRunning = false;
-		auto lastTP = std::chrono::high_resolution_clock::now();
-		while (!mStopRunning) {
-			// Calculate the elapsed time since the last update
-			auto currentTP = std::chrono::high_resolution_clock::now();
-			std::chrono::duration<float> durationInSeconds = currentTP - lastTP;
+		std::chrono::duration<float> durationInSeconds = currentTp - lastTp;
+		float deltaTime = durationInSeconds.count();
+		/*float waitTime = mUpdateTime - deltaTime;
+		if (waitTime > 0) {
+			SOMBRA_DEBUG_LOG << "Wait " << waitTime << " seconds";
+			std::this_thread::sleep_for( std::chrono::duration<float>(waitTime) );
+		}*/
 
-			float deltaTime = durationInSeconds.count();
-			/*float waitTime = mUpdateTime - deltaTime;
-			if (waitTime > 0) {
-				SOMBRA_DEBUG_LOG << "Wait " << waitTime << " seconds";
-				std::this_thread::sleep_for( std::chrono::duration<float>(waitTime) );
-			}
-			else {*/
-				lastTP = currentTP;
+		utils::TaskSet taskSet(*mTaskManager, false);
 
-				// Retrieve the input
-				onInput();
+		auto renderTask = taskSet.createSubTaskSet([this](auto& subTaskSet) { render(subTaskSet); });
+		auto inputTask = taskSet.createSubTaskSet([this](auto& subTaskSet) { input(subTaskSet); });
+		auto updateTask = taskSet.createSubTaskSet([this, deltaTime](auto& subTaskSet) { update(deltaTime, subTaskSet); });
+		auto nextFrameTask = taskSet.createTask([this, currentTp]() { frameTask(currentTp); });
 
-				// Update the Systems
-				onUpdate(deltaTime);
+		taskSet.depends(updateTask, renderTask);
+		taskSet.depends(updateTask, inputTask);
+		taskSet.depends(nextFrameTask, updateTask);
 
-				// Draw
-				onRender();
-			//}
-		}
-
-		mState = AppState::Stopped;
-
-		SOMBRA_INFO_LOG << "End running";
-		return true;
+		taskSet.submit();
 	}
 
 
-	void Application::onInput()
+	void Application::input(utils::SubTaskSet& subTaskSet)
 	{
 		SOMBRA_DEBUG_LOG << "Init";
-		mWindowSystem->update();
-		mInputManager->update();
+		auto windowTask = subTaskSet.createTask([&]() { mWindowSystem->update(); }, 0);
+		auto inputTask = subTaskSet.createTask([&]() { mInputManager->update(); });
+
+		subTaskSet.depends(inputTask, windowTask);
 		SOMBRA_DEBUG_LOG << "End";
 	}
 
 
-	void Application::onUpdate(float deltaTime)
+	void Application::update(float deltaTime, utils::SubTaskSet& subTaskSet)
 	{
 		SOMBRA_DEBUG_LOG << "Init (" << deltaTime << ")";
+		auto animationTask = subTaskSet.createTask([&]() { mAnimationManager->update(deltaTime); });
+		auto dynamicsTask = subTaskSet.createTask([&]() { mPhysicsManager->doDynamics(deltaTime); });
+		auto collisionTask = subTaskSet.createTask([&]() { mCollisionManager->update(deltaTime); });
+		auto constraintsTask = subTaskSet.createTask([&]() { mPhysicsManager->doConstraints(deltaTime); });
+		auto audioTask = subTaskSet.createTask([&]() { mAudioManager->update(); });
+		auto graphicsTask = subTaskSet.createTask([&]() { mGraphicsManager->update(); }, 0);
 
-		utils::TaskSet taskSet(*mTaskManager);
-		auto animationTask = taskSet.createTask([&]() { mAnimationManager->update(deltaTime); });
-		auto dynamicsTask = taskSet.createTask([&]() { mPhysicsManager->doDynamics(deltaTime); });
-		auto collisionTask = taskSet.createTask([&]() { mCollisionManager->update(deltaTime); });
-		auto constraintsTask = taskSet.createTask([&]() { mPhysicsManager->doConstraints(deltaTime); });
-		auto audioTask = taskSet.createTask([&]() { mAudioManager->update(); });
-
-		taskSet.depends(collisionTask, dynamicsTask);
-		taskSet.depends(constraintsTask, collisionTask);
-		taskSet.depends(audioTask, constraintsTask);
-		taskSet.depends(audioTask, animationTask);
-
-		taskSet.submitAndWait();
-
-		// The GraphicsManager update function must be called from thread 0
-		mGraphicsManager->update();
-
+		subTaskSet.depends(collisionTask, dynamicsTask);
+		subTaskSet.depends(constraintsTask, collisionTask);
+		subTaskSet.depends(audioTask, constraintsTask);
+		subTaskSet.depends(audioTask, animationTask);
+		subTaskSet.depends(graphicsTask, constraintsTask);
+		subTaskSet.depends(graphicsTask, animationTask);
 		SOMBRA_DEBUG_LOG << "End";
 	}
 
 
-	void Application::onRender()
+	void Application::render(utils::SubTaskSet& subTaskSet)
 	{
 		SOMBRA_DEBUG_LOG << "Init";
-		mGraphicsManager->render();
-		mWindowSystem->swapBuffers();
+		auto renderTask = subTaskSet.createTask([&]() { mGraphicsManager->render(); }, 0);
+		auto swapTask = subTaskSet.createTask([&]() { mWindowSystem->swapBuffers(); });
+
+		subTaskSet.depends(swapTask, renderTask);
 		SOMBRA_DEBUG_LOG << "End";
 	}
 
