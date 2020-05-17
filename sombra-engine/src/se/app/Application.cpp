@@ -3,7 +3,7 @@
 #include "se/window/WindowSystem.h"
 #include "se/graphics/GraphicsEngine.h"
 #include "se/physics/PhysicsEngine.h"
-#include "se/animation/AnimationSystem.h"
+#include "se/animation/AnimationEngine.h"
 #include "se/audio/AudioEngine.h"
 #include "se/utils/TaskSet.h"
 #include "se/app/Application.h"
@@ -25,7 +25,7 @@ namespace se::app {
 		float updateTime
 	) : mUpdateTime(updateTime), mState(AppState::Stopped), mStopRunning(false),
 		mWindowSystem(nullptr), mGraphicsEngine(nullptr), mPhysicsEngine(nullptr), mCollisionWorld(nullptr),
-		mAnimationSystem(nullptr), mAudioEngine(nullptr), mTaskManager(nullptr),
+		mAnimationEngine(nullptr), mAudioEngine(nullptr), mTaskManager(nullptr),
 		mEventManager(nullptr), mInputManager(nullptr), mGraphicsManager(nullptr), mPhysicsManager(nullptr),
 		mCollisionManager(nullptr), mAnimationManager(nullptr), mAudioManager(nullptr)
 	{
@@ -57,8 +57,8 @@ namespace se::app {
 			mCollisionManager = new CollisionManager(*mCollisionWorld, *mEventManager);
 
 			// Animation
-			mAnimationSystem = new animation::AnimationSystem();
-			mAnimationManager = new AnimationManager(*mAnimationSystem);
+			mAnimationEngine = new animation::AnimationEngine();
+			mAnimationManager = new AnimationManager(*mAnimationEngine);
 
 			// Audio
 			mAudioEngine = new audio::AudioEngine();
@@ -79,7 +79,7 @@ namespace se::app {
 		if (mAudioManager) { delete mAudioManager; }
 		if (mAudioEngine) { delete mAudioEngine; }
 		if (mAnimationManager) { delete mAnimationManager; }
-		if (mAnimationSystem) { delete mAnimationSystem; }
+		if (mAnimationEngine) { delete mAnimationEngine; }
 		if (mCollisionManager) { delete mCollisionManager; }
 		if (mCollisionWorld) { delete mCollisionWorld; }
 		if (mPhysicsManager) { delete mPhysicsManager; }

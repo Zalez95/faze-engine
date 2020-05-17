@@ -24,7 +24,7 @@ namespace game {
 		mGameData.graphicsEngine = mGraphicsEngine;
 		mGameData.physicsEngine = mPhysicsEngine;
 		mGameData.collisionWorld = mCollisionWorld;
-		mGameData.animationSystem = mAnimationSystem;
+		mGameData.animationEngine = mAnimationEngine;
 		mGameData.audioEngine = mAudioEngine;
 
 		mGameData.eventManager = mEventManager;
