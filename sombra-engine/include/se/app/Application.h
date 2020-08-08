@@ -11,13 +11,17 @@ namespace se::utils { class TaskManager; }
 
 namespace se::app {
 
+	class EntityDatabase;
 	class EventManager;
-	class InputManager;
-	class GraphicsManager;
-	class PhysicsManager;
-	class CollisionManager;
-	class AnimationManager;
-	class AudioManager;
+	class InputSystem;
+	class CameraSystem;
+	class RMeshSystem;
+	class RTerrainSystem;
+	class DynamicsSystem;
+	class ConstraintsSystem;
+	class CollisionSystem;
+	class AnimationSystem;
+	class AudioSystem;
 	class GUIManager;
 
 
@@ -61,14 +65,18 @@ namespace se::app {
 		audio::AudioEngine* mAudioEngine;
 		utils::TaskManager* mTaskManager;
 
-		/** The managers that hold the data of the entities */
+		/** The Systems that hold and update the data of the entities */
+		EntityDatabase* mEntityDatabase;
 		EventManager* mEventManager;
-		InputManager* mInputManager;
-		GraphicsManager* mGraphicsManager;
-		PhysicsManager* mPhysicsManager;
-		CollisionManager* mCollisionManager;
-		AnimationManager* mAnimationManager;
-		AudioManager* mAudioManager;
+		InputSystem* mInputSystem;
+		CameraSystem* mCameraSystem;
+		RMeshSystem* mRMeshSystem;
+		RTerrainSystem* mRTerrainSystem;
+		DynamicsSystem* mDynamicsSystem;
+		ConstraintsSystem* mConstraintsSystem;
+		CollisionSystem* mCollisionSystem;
+		AnimationSystem* mAnimationSystem;
+		AudioSystem* mAudioSystem;
 		GUIManager* mGUIManager;
 
 	public:		// Functions

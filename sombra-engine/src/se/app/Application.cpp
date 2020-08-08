@@ -9,12 +9,16 @@
 #include "se/audio/AudioEngine.h"
 #include "se/utils/TaskSet.h"
 #include "se/app/Application.h"
-#include "se/app/InputManager.h"
-#include "se/app/GraphicsManager.h"
-#include "se/app/PhysicsManager.h"
-#include "se/app/CollisionManager.h"
-#include "se/app/AnimationManager.h"
-#include "se/app/AudioManager.h"
+#include "se/app/EntityDatabase.h"
+#include "se/app/InputSystem.h"
+#include "se/app/CameraSystem.h"
+#include "se/app/RMeshSystem.h"
+#include "se/app/RTerrainSystem.h"
+#include "se/app/DynamicsSystem.h"
+#include "se/app/ConstraintsSystem.h"
+#include "se/app/CollisionSystem.h"
+#include "se/app/AnimationSystem.h"
+#include "se/app/AudioSystem.h"
 #include "se/app/events/EventManager.h"
 #include "se/app/gui/GUIManager.h"
 
@@ -25,10 +29,13 @@ namespace se::app {
 		const collision::CollisionWorldData& collisionConfig,
 		float updateTime
 	) : mUpdateTime(updateTime), mState(AppState::Stopped), mStopRunning(false),
-		mWindowSystem(nullptr), mGraphicsEngine(nullptr), mPhysicsEngine(nullptr), mCollisionWorld(nullptr),
-		mAnimationEngine(nullptr), mAudioEngine(nullptr), mTaskManager(nullptr),
-		mEventManager(nullptr), mInputManager(nullptr), mGraphicsManager(nullptr), mPhysicsManager(nullptr),
-		mCollisionManager(nullptr), mAnimationManager(nullptr), mAudioManager(nullptr)
+		mWindowSystem(nullptr), mGraphicsEngine(nullptr), mPhysicsEngine(nullptr),
+		mCollisionWorld(nullptr), mAnimationEngine(nullptr), mAudioEngine(nullptr),
+		mTaskManager(nullptr),
+		mEntityDatabase(nullptr), mEventManager(nullptr), mInputSystem(nullptr),
+		mCameraSystem(nullptr), mRMeshSystem(nullptr), mRTerrainSystem(nullptr),
+		mDynamicsSystem(nullptr), mConstraintsSystem(nullptr), mCollisionSystem(nullptr),
+		mAnimationSystem(nullptr), mAudioSystem(nullptr)
 	{
 		SOMBRA_INFO_LOG << "Creating the Application";
 		try {
@@ -42,29 +49,32 @@ namespace se::app {
 			mWindowSystem = new window::WindowSystem(windowConfig);
 
 			// Input
-			mInputManager = new InputManager(*mWindowSystem, *mEventManager);
+			mInputSystem = new InputSystem(*mEntityDatabase, *mWindowSystem, *mEventManager);
 
 			// Graphics
 			mGraphicsEngine = new graphics::GraphicsEngine();
-			mGraphicsManager = new GraphicsManager(*mGraphicsEngine, *mEventManager, windowConfig.width, windowConfig.height);
-			mGUIManager = new GUIManager(*mEventManager, *mGraphicsManager, { windowConfig.width, windowConfig.height });
+			mCameraSystem = new CameraSystem(*mEntityDatabase, windowConfig.width, windowConfig.height);
+			mRMeshSystem = new RMeshSystem(*mEntityDatabase, *mGraphicsEngine, *mCameraSystem);
+			mRTerrainSystem = new RTerrainSystem(*mEntityDatabase, *mGraphicsEngine, *mCameraSystem);
+			//mGUIManager = new GUIManager(*mEventManager, *mGraphicsSystem, { windowConfig.width, windowConfig.height });
 			se::graphics::GraphicsOperations::setViewport(0, 0, windowConfig.width, windowConfig.height);
 
 			// Physics
 			mPhysicsEngine = new physics::PhysicsEngine(kBaseBias);
-			mPhysicsManager = new PhysicsManager(*mPhysicsEngine, *mEventManager);
+			mDynamicsSystem = new DynamicsSystem(*mEntityDatabase, *mPhysicsEngine);
+			mConstraintsSystem = new ConstraintsSystem(*mEntityDatabase, *mEventManager, *mPhysicsEngine);
 
 			// Collision
 			mCollisionWorld = new collision::CollisionWorld(collisionConfig);
-			mCollisionManager = new CollisionManager(*mCollisionWorld, *mEventManager);
+			mCollisionSystem = new CollisionSystem(*mEntityDatabase, *mEventManager, *mCollisionWorld);
 
 			// Animation
 			mAnimationEngine = new animation::AnimationEngine();
-			mAnimationManager = new AnimationManager(*mAnimationEngine);
+			mAnimationSystem = new AnimationSystem(*mEntityDatabase, *mAnimationEngine);
 
 			// Audio
 			mAudioEngine = new audio::AudioEngine();
-			mAudioManager = new AudioManager(*mAudioEngine);
+			mAudioSystem = new AudioSystem(*mEntityDatabase, *mAudioEngine);
 		}
 		catch (std::exception& e) {
 			mState = AppState::Error;
@@ -78,17 +88,20 @@ namespace se::app {
 	{
 		SOMBRA_INFO_LOG << "Deleting the Application";
 		if (mGUIManager) { delete mGUIManager; }
-		if (mAudioManager) { delete mAudioManager; }
+		if (mAudioSystem) { delete mAudioSystem; }
 		if (mAudioEngine) { delete mAudioEngine; }
-		if (mAnimationManager) { delete mAnimationManager; }
+		if (mAnimationSystem) { delete mAnimationSystem; }
 		if (mAnimationEngine) { delete mAnimationEngine; }
-		if (mCollisionManager) { delete mCollisionManager; }
+		if (mCollisionSystem) { delete mCollisionSystem; }
 		if (mCollisionWorld) { delete mCollisionWorld; }
-		if (mPhysicsManager) { delete mPhysicsManager; }
+		if (mConstraintsSystem) { delete mConstraintsSystem; }
+		if (mDynamicsSystem) { delete mDynamicsSystem; }
 		if (mPhysicsEngine) { delete mPhysicsEngine; }
-		if (mGraphicsManager) { delete mGraphicsManager; }
+		if (mCameraSystem) { delete mCameraSystem; }
+		if (mRMeshSystem) { delete mRMeshSystem; }
+		if (mRTerrainSystem) { delete mRTerrainSystem; }
 		if (mGraphicsEngine) { delete mGraphicsEngine; }
-		if (mInputManager) { delete mInputManager; }
+		if (mInputSystem) { delete mInputSystem; }
 		if (mWindowSystem) { delete mWindowSystem; }
 		if (mEventManager) { delete mEventManager; }
 		if (mTaskManager) { delete mTaskManager; }
@@ -165,7 +178,7 @@ namespace se::app {
 	{
 		SOMBRA_DEBUG_LOG << "Init";
 		mWindowSystem->update();
-		mInputManager->update();
+		mInputSystem->update();
 		SOMBRA_DEBUG_LOG << "End";
 	}
 
@@ -175,21 +188,27 @@ namespace se::app {
 		SOMBRA_DEBUG_LOG << "Init (" << deltaTime << ")";
 
 		utils::TaskSet taskSet(*mTaskManager);
-		auto animationTask = taskSet.createTask([&]() { mAnimationManager->update(deltaTime); });
-		auto dynamicsTask = taskSet.createTask([&]() { mPhysicsManager->doDynamics(deltaTime); });
-		auto collisionTask = taskSet.createTask([&]() { mCollisionManager->update(deltaTime); });
-		auto constraintsTask = taskSet.createTask([&]() { mPhysicsManager->doConstraints(deltaTime); });
-		auto audioTask = taskSet.createTask([&]() { mAudioManager->update(); });
+		auto animationTask = taskSet.createTask([&]() { mAnimationSystem->update(); });
+		auto dynamicsTask = taskSet.createTask([&]() { mDynamicsSystem->update(); });
+		auto collisionTask = taskSet.createTask([&]() { mCollisionSystem->update(); });
+		auto constraintsTask = taskSet.createTask([&]() { mConstraintsSystem->update(); });
+		auto audioTask = taskSet.createTask([&]() { mAudioSystem->update(); });
+		auto cameraTask = taskSet.createTask([&]() { mCameraSystem->update(); });
+		auto rmeshTask = taskSet.createTask([&]() { mRMeshSystem->update(); });
+		auto rterrainTask = taskSet.createTask([&]() { mRTerrainSystem->update(); });
 
 		taskSet.depends(collisionTask, dynamicsTask);
 		taskSet.depends(constraintsTask, collisionTask);
 		taskSet.depends(audioTask, constraintsTask);
 		taskSet.depends(audioTask, animationTask);
+		taskSet.depends(cameraTask, constraintsTask);
+		taskSet.depends(rmeshTask, constraintsTask);
+		taskSet.depends(rterrainTask, cameraTaskTask);
 
 		taskSet.submitAndWait();
 
-		// The GraphicsManager update function must be called from thread 0
-		mGraphicsManager->update();
+		// The GraphicsSystem update function must be called from thread 0
+		// TODO:light
 
 		SOMBRA_DEBUG_LOG << "End";
 	}
@@ -198,7 +217,6 @@ namespace se::app {
 	void Application::onRender()
 	{
 		SOMBRA_DEBUG_LOG << "Init";
-		mGraphicsManager->render();
 		mWindowSystem->swapBuffers();
 		SOMBRA_DEBUG_LOG << "End";
 	}

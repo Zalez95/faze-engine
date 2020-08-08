@@ -4,7 +4,7 @@
 #include "se/collision/Collider.h"
 #include "se/app/CollisionSystem.h"
 #include "se/app/TransformsComponent.h"
-#include "se/app/events/CollisionEvent2.h"
+#include "se/app/events/CollisionEvent.h"
 
 namespace se::app {
 

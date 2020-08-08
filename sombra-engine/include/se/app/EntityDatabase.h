@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "../utils/PackedVector.h"
-#include "Entity2.h"
+#include "Entity.h"
 #include "ISystem.h"
 
 namespace se::app {

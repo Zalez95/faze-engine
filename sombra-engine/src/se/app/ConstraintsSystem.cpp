@@ -4,14 +4,14 @@
 #include "se/app/ConstraintsSystem.h"
 #include "se/app/EntityDatabase.h"
 #include "se/app/TransformsComponent.h"
-#include "se/app/events/CollisionEvent2.h"
+#include "se/app/events/CollisionEvent.h"
 
 namespace se::app {
 
 	ConstraintsSystem::ConstraintsSystem(
-		EntityDatabase& entityDatabase, physics::PhysicsEngine& physicsEngine,
-		EventManager& eventManager
-	) : ISystem(entityDatabase), mPhysicsEngine(physicsEngine), mEventManager(eventManager)
+		EntityDatabase& entityDatabase, EventManager& eventManager,
+		physics::PhysicsEngine& physicsEngine
+	) : ISystem(entityDatabase), mEventManager(eventManager), mPhysicsEngine(physicsEngine)
 	{
 		// TODO: reserve max contact constraints
 		mEventManager.subscribe(this, Topic::Collision);

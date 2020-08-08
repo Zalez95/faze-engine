@@ -51,11 +51,11 @@ namespace se::app {
 		/** The gravity acceleration value of all the FrictionConstraints */
 		static constexpr float kFrictionGravityAcceleration = 9.8f;
 
-		/** The Engine used for updating the data of the PhysicsEntities */
-		physics::PhysicsEngine& mPhysicsEngine;
-
 		/** The EventManager that will notify the events */
 		EventManager& mEventManager;
+
+		/** The Engine used for updating the data of the PhysicsEntities */
+		physics::PhysicsEngine& mPhysicsEngine;
 
 		/** The NormalConstraints generated as a consecuence of the
 		 * PhysicsEntities collisions */
@@ -67,14 +67,13 @@ namespace se::app {
 		 *
 		 * @param	entityDatabase the EntityDatabase that holds all the
 		 *			Entities
-		 * @param	physicsEngine a reference to the PhysicsEngine used
-		 *			by the ConstraintsSystem
 		 * @param	eventManager a reference to the EventManager that the
-		 *			ConstraintsSystem will be subscribed to */
+		 *			ConstraintsSystem will be subscribed to
+		 * @param	physicsEngine a reference to the PhysicsEngine used
+		 *			by the ConstraintsSystem */
 		ConstraintsSystem(
-			EntityDatabase& entityDatabase,
-			physics::PhysicsEngine& physicsEngine,
-			EventManager& eventManager
+			EntityDatabase& entityDatabase, EventManager& eventManager,
+			physics::PhysicsEngine& physicsEngine
 		);
 
 		/** Class destructor */
