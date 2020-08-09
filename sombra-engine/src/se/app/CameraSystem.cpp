@@ -9,6 +9,20 @@
 
 namespace se::app {
 
+	CameraSystem::CameraSystem(EntityDatabase& entityDatabase, std::size_t width, std::size_t height) :
+		ISystem(entityDatabase), mWidth(width), mHeight(height),
+		mActiveCamera(nullptr), mActiveCameraUpdated(false)
+	{
+		mEntityDatabase.addSystem(this, EntityDatabase::ComponentMask().set<Camera>());
+	}
+
+
+	CameraSystem::~CameraSystem()
+	{
+		mEntityDatabase.removeSystem(this);
+	}
+
+
 	CameraSystem::PassSPtr CameraSystem::createPass2D(graphics::Renderer* renderer, ProgramSPtr program)
 	{
 		auto& passData = mPassesData.emplace_back(true);

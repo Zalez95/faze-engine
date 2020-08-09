@@ -70,11 +70,17 @@ namespace se::app {
 		CameraSystem(
 			EntityDatabase& entityDatabase,
 			std::size_t width, std::size_t height
-		) : ISystem(entityDatabase), mWidth(width), mHeight(height),
-			mActiveCamera(nullptr), mActiveCameraUpdated(false) {};
+		);
+
+		/** Class destructor */
+		~CameraSystem();
 
 		/** @return	a pointer to the active Camera */
 		Camera* getActiveCamera() { return mActiveCamera; };
+
+		/** @return	true if the active Camera position was updated in the
+		 *			last frame */
+		bool wasCameraUpdated() { return mActiveCameraUpdated; };
 
 		/** Creates a new Pass and adds the uniform variables for the cameras
 		 *

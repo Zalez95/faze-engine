@@ -15,11 +15,13 @@ namespace se::app {
 	{
 		// TODO: reserve max contact constraints
 		mEventManager.subscribe(this, Topic::Collision);
+		mEntityDatabase.addSystem(this, EntityDatabase::ComponentMask().set<physics::RigidBody>());
 	}
 
 
 	ConstraintsSystem::~ConstraintsSystem()
 	{
+		mEntityDatabase.removeSystem(this);
 		mEventManager.unsubscribe(this, Topic::Collision);
 	}
 

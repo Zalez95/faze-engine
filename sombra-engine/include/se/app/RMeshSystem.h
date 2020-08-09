@@ -53,8 +53,10 @@ namespace se::app {
 			EntityDatabase& entityDatabase,
 			graphics::GraphicsEngine& graphicsEngine,
 			CameraSystem& cameraSystem
-		) : ISystem(entityDatabase), mGraphicsEngine(graphicsEngine),
-			mCameraSystem(cameraSystem) {};
+		);
+
+		/** Class destructor */
+		~RMeshSystem();
 
 		/** Function that the EntityDatabase will call when an Entity is
 		 * added

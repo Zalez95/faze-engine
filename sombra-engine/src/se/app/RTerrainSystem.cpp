@@ -8,6 +8,20 @@
 
 namespace se::app {
 
+	RTerrainSystem::RTerrainSystem(
+		EntityDatabase& entityDatabase, graphics::GraphicsEngine& graphicsEngine, CameraSystem& cameraSystem
+	) : ISystem(entityDatabase), mGraphicsEngine(graphicsEngine), mCameraSystem(cameraSystem)
+	{
+		mEntityDatabase.addSystem(this, EntityDatabase::ComponentMask().set<graphics::RenderableTerrain>());
+	}
+
+
+	RTerrainSystem::~RTerrainSystem()
+	{
+		mEntityDatabase.removeSystem(this);
+	}
+
+
 	void RTerrainSystem::onNewEntity(Entity entity)
 	{
 		auto [transforms, rTerrain] = mEntityDatabase.getComponents<TransformsComponent, graphics::RenderableTerrain>(entity);
@@ -16,10 +30,13 @@ namespace se::app {
 			return;
 		}
 
-		glm::mat4 translation	= glm::translate(glm::mat4(1.0f), transforms->position);
-		glm::mat4 rotation		= glm::mat4_cast(transforms->orientation);
-		glm::mat4 scale			= glm::scale(glm::mat4(1.0f), transforms->scale);
-		glm::mat4 modelMatrix	= translation * rotation * scale;
+		glm::mat4 modelMatrix(1.0f);
+		if (transforms) {
+			glm::mat4 translation	= glm::translate(glm::mat4(1.0f), transforms->position);
+			glm::mat4 rotation		= glm::mat4_cast(transforms->orientation);
+			glm::mat4 scale			= glm::scale(glm::mat4(1.0f), transforms->scale);
+			modelMatrix = translation * rotation * scale;
+		}
 
 		auto& meshData = mRenderableTerrainEntities[entity];
 		rTerrain->processTechniques([&, rTerrain = rTerrain](auto technique) { technique->processPasses([&](auto pass) {
@@ -80,7 +97,7 @@ namespace se::app {
 					terrainData.modelMatrix->setValue(modelMatrix);
 				}
 
-				if (mCameraSystem.getActiveCamera()) {
+				if (mCameraSystem.getActiveCamera() && mCameraSystem.wasCameraUpdated()) {
 					rTerrain->setHighestLodLocation(mCameraSystem.getActiveCamera()->getPosition());
 				}
 			}
