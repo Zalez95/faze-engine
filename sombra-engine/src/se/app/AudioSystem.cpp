@@ -9,6 +9,7 @@ namespace se::app {
 	AudioSystem::AudioSystem(EntityDatabase& entityDatabase, audio::AudioEngine& audioEngine) :
 		ISystem(entityDatabase), mAudioEngine(audioEngine), mListener(kNullEntity)
 	{
+		mEntities.reserve(mEntityDatabase.getMaxEntities());
 		mEntityDatabase.addSystem(this, EntityDatabase::ComponentMask(true));
 	}
 
@@ -34,6 +35,7 @@ namespace se::app {
 			source->setVelocity(transforms->velocity);
 		}
 
+		mEntities.push_back(entity);
 		SOMBRA_INFO_LOG << "Entity " << entity << " with Source " << source << " added successfully";
 	}
 
@@ -44,6 +46,17 @@ namespace se::app {
 			mListener = kNullEntity;
 			SOMBRA_INFO_LOG << "Listener Entity " << entity << " removed successfully";
 		}
+
+		auto [source] = mEntityDatabase.getComponents<audio::Source>(entity);
+		if (!source) {
+			SOMBRA_WARN_LOG << "Entity " << entity << " couldn't be removed";
+			return;
+		}
+
+		auto it = std::find(mEntities.begin(), mEntities.end(), entity);
+		std::swap(*it, mEntities.back());
+		mEntities.pop_back();
+		SOMBRA_INFO_LOG << "Entity " << entity << " removed successfully";
 	}
 
 
@@ -81,18 +94,17 @@ namespace se::app {
 		}
 
 		SOMBRA_DEBUG_LOG << "Updating the Sources";
-		mEntityDatabase.iterateComponents<TransformsComponent, audio::Source>(
-			[this](Entity, TransformsComponent* transforms, audio::Source* source) {
-				if (transforms->updated.any()) {
-					source->setPosition(transforms->position);
-					source->setOrientation(
-						glm::vec3(0.0f, 0.0f, 1.0f) * transforms->orientation,
-						glm::vec3(0.0f, 1.0f, 0.0)
-					);
-					source->setVelocity(transforms->velocity);
-				}
+		for (auto entity : mEntities) {
+			auto [transforms, source] = mEntityDatabase.getComponents<TransformsComponent, audio::Source>(entity);
+			if (transforms && transforms->updated.any()) {
+				source->setPosition(transforms->position);
+				source->setOrientation(
+					glm::vec3(0.0f, 0.0f, 1.0f) * transforms->orientation,
+					glm::vec3(0.0f, 1.0f, 0.0)
+				);
+				source->setVelocity(transforms->velocity);
 			}
-		);
+		}
 
 		SOMBRA_INFO_LOG << "AudioSystem updated";
 	}

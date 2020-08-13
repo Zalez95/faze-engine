@@ -38,6 +38,9 @@ namespace se::app {
 		/** The CameraSystem that holds the Passes data */
 		CameraSystem& mCameraSystem;
 
+		/** The Entities to update */
+		std::vector<Entity> mEntities;
+
 		/** Maps each Entity with its respective RenderableMesh uniform data */
 		std::unordered_map<Entity, RenderableMeshData> mRenderableMeshEntities;
 

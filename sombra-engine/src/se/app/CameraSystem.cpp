@@ -13,6 +13,7 @@ namespace se::app {
 		ISystem(entityDatabase), mWidth(width), mHeight(height),
 		mActiveCamera(nullptr), mActiveCameraUpdated(false)
 	{
+		mEntities.reserve(mEntityDatabase.getMaxEntities());
 		mEntityDatabase.addSystem(this, EntityDatabase::ComponentMask().set<Camera>());
 	}
 
@@ -93,6 +94,7 @@ namespace se::app {
 			mActiveCamera = camera;
 		}
 
+		mEntities.push_back(entity);
 		SOMBRA_INFO_LOG << "Entity " << entity << " with Camera " << camera << " added successfully";
 	}
 
@@ -104,6 +106,9 @@ namespace se::app {
 			mActiveCamera = nullptr;
 		}
 
+		auto it = std::find(mEntities.begin(), mEntities.end(), entity);
+		std::swap(*it, mEntities.back());
+		mEntities.pop_back();
 		SOMBRA_INFO_LOG << "Camera Entity " << entity << " removed successfully";
 	}
 
@@ -113,19 +118,18 @@ namespace se::app {
 		SOMBRA_DEBUG_LOG << "Updating the Cameras";
 
 		mActiveCameraUpdated = false;
-		mEntityDatabase.iterateComponents<TransformsComponent, Camera>(
-			[&](Entity, TransformsComponent* transforms, Camera* camera) {
-				if (transforms->updated.any()) {
-					camera->setPosition(transforms->position);
-					camera->setTarget(transforms->position + glm::vec3(0.0f, 0.0f, 1.0f) * transforms->orientation);
-					camera->setUp({ 0.0f, 1.0f, 0.0f });
+		for (auto entity : mEntities) {
+			auto [transforms, camera] = mEntityDatabase.getComponents<TransformsComponent, Camera>(entity);
+			if (transforms && transforms->updated.any()) {
+				camera->setPosition(transforms->position);
+				camera->setTarget(transforms->position + glm::vec3(0.0f, 0.0f, 1.0f) * transforms->orientation);
+				camera->setUp({ 0.0f, 1.0f, 0.0f });
 
-					if (camera == mActiveCamera) {
-						mActiveCameraUpdated = true;
-					}
+				if (camera == mActiveCamera) {
+					mActiveCameraUpdated = true;
 				}
 			}
-		);
+		}
 
 		if (mActiveCameraUpdated) {
 			for (auto& passData : mPassesData) if (!passData.is2D) {

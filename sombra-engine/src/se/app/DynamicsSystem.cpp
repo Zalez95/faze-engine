@@ -9,6 +9,7 @@ namespace se::app {
 	DynamicsSystem::DynamicsSystem(EntityDatabase& entityDatabase, physics::PhysicsEngine& physicsEngine) :
 		ISystem(entityDatabase), mPhysicsEngine(physicsEngine)
 	{
+		mEntities.reserve(mEntityDatabase.getMaxEntities());
 		mEntityDatabase.addSystem(this, EntityDatabase::ComponentMask().set<physics::RigidBody>());
 	}
 
@@ -36,6 +37,7 @@ namespace se::app {
 		}
 
 		mPhysicsEngine.addRigidBody(rb);
+		mEntities.push_back(entity);
 		SOMBRA_INFO_LOG << "Entity " << entity << " with RigidBody " << rb << " added successfully";
 	}
 
@@ -49,6 +51,9 @@ namespace se::app {
 		}
 
 		mPhysicsEngine.removeRigidBody(rb);
+		auto it = std::find(mEntities.begin(), mEntities.end(), entity);
+		std::swap(*it, mEntities.back());
+		mEntities.pop_back();
 		SOMBRA_INFO_LOG << "Entity " << entity << " removed successfully";
 	}
 
@@ -60,32 +65,30 @@ namespace se::app {
 		mPhysicsEngine.resetRigidBodiesState();
 
 		SOMBRA_DEBUG_LOG << "Updating the RigidBodies";
-		mEntityDatabase.iterateComponents<TransformsComponent, physics::RigidBody>(
-			[this](Entity, TransformsComponent* transforms, physics::RigidBody* rigidBody) {
-				transforms->updated.reset( static_cast<int>(TransformsComponent::Update::Physics) );
-				if (transforms->updated.any()) {
-					rigidBody->getData().position		= transforms->position;
-					rigidBody->getData().linearVelocity	= transforms->velocity;
-					rigidBody->getData().orientation	= transforms->orientation;
-					rigidBody->synchWithData();
-				}
+		for (auto entity : mEntities) {
+			auto [transforms, rigidBody] = mEntityDatabase.getComponents<TransformsComponent, physics::RigidBody>(entity);
+			transforms->updated.reset( static_cast<int>(TransformsComponent::Update::Physics) );
+			if (transforms && transforms->updated.any()) {
+				rigidBody->getData().position		= transforms->position;
+				rigidBody->getData().linearVelocity	= transforms->velocity;
+				rigidBody->getData().orientation	= transforms->orientation;
+				rigidBody->synchWithData();
 			}
-		);
+		}
 
 		SOMBRA_DEBUG_LOG << "Integrating the RigidBodies";
 		mPhysicsEngine.integrate(mDeltaTime);
 
 		SOMBRA_DEBUG_LOG << "Updating the Entities";
-		mEntityDatabase.iterateComponents<TransformsComponent, physics::RigidBody>(
-			[this](Entity, TransformsComponent* transforms, physics::RigidBody* rigidBody) {
-				if (rigidBody->checkState(physics::RigidBodyState::Integrated)) {
-					transforms->position	= rigidBody->getData().position;
-					transforms->velocity	= rigidBody->getData().linearVelocity;
-					transforms->orientation	= rigidBody->getData().orientation;
-					transforms->updated.set( static_cast<int>(TransformsComponent::Update::Physics) );
-				}
+		for (auto entity : mEntities) {
+			auto [transforms, rigidBody] = mEntityDatabase.getComponents<TransformsComponent, physics::RigidBody>(entity);
+			if (transforms && rigidBody->checkState(physics::RigidBodyState::Integrated)) {
+				transforms->position	= rigidBody->getData().position;
+				transforms->velocity	= rigidBody->getData().linearVelocity;
+				transforms->orientation	= rigidBody->getData().orientation;
+				transforms->updated.set( static_cast<int>(TransformsComponent::Update::Physics) );
 			}
-		);
+		}
 
 		SOMBRA_INFO_LOG << "End";
 	}

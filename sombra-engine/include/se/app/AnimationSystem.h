@@ -23,6 +23,9 @@ namespace se::app {
 		 * update */
 		std::unique_ptr<animation::AnimationNode> mRootNode;
 
+		/** The Entities to update */
+		std::vector<Entity> mEntities;
+
 	public:		// Functions
 		/** Creates a new AnimationSystem
 		 *

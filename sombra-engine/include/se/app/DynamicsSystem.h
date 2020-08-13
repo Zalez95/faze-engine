@@ -16,6 +16,9 @@ namespace se::app {
 		/** The Engine used for updating the data of the PhysicsEntities */
 		physics::PhysicsEngine& mPhysicsEngine;
 
+		/** The Entities to update */
+		std::vector<Entity> mEntities;
+
 	public:		// Functions
 		/** Creates a new DynamicsSystem
 		 *

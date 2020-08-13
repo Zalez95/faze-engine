@@ -13,6 +13,7 @@ namespace se::app {
 		EntityDatabase& entityDatabase, EventManager& eventManager, collision::CollisionWorld& collisionWorld
 	) : ISystem(entityDatabase), mEventManager(eventManager), mCollisionWorld(collisionWorld)
 	{
+		mEntities.reserve(mEntityDatabase.getMaxEntities());
 		mEntityDatabase.addSystem(this, EntityDatabase::ComponentMask().set<collision::Collider>());
 	}
 
@@ -40,6 +41,7 @@ namespace se::app {
 		}
 
 		mCollisionWorld.addCollider(collider);
+		mEntities.push_back(entity);
 		SOMBRA_INFO_LOG << "Entity " << entity << " with Collider " << collider << " added successfully";
 	}
 
@@ -53,6 +55,9 @@ namespace se::app {
 		}
 
 		mCollisionWorld.removeCollider(collider);
+		auto it = std::find(mEntities.begin(), mEntities.end(), entity);
+		std::swap(*it, mEntities.back());
+		mEntities.pop_back();
 		SOMBRA_INFO_LOG << "Entity " << entity << " removed successfully";
 	}
 
@@ -62,16 +67,15 @@ namespace se::app {
 		SOMBRA_INFO_LOG << "Updating the CollisionSystem";
 
 		SOMBRA_DEBUG_LOG << "Updating Colliders";
-		mEntityDatabase.iterateComponents<TransformsComponent, collision::Collider>(
-			[this](Entity, TransformsComponent* transforms, collision::Collider* collider) {
-				if (transforms->updated.any()) {
-					glm::mat4 translation	= glm::translate(glm::mat4(1.0f), transforms->position);
-					glm::mat4 rotation		= glm::mat4_cast(transforms->orientation);
-					glm::mat4 scale			= glm::scale(glm::mat4(1.0f), transforms->scale);
-					collider->setTransforms(translation * rotation * scale);
-				}
+		for (auto entity : mEntities) {
+			auto [transforms, collider] = mEntityDatabase.getComponents<TransformsComponent, collision::Collider>(entity);
+			if (transforms && transforms->updated.any()) {
+				glm::mat4 translation	= glm::translate(glm::mat4(1.0f), transforms->position);
+				glm::mat4 rotation		= glm::mat4_cast(transforms->orientation);
+				glm::mat4 scale			= glm::scale(glm::mat4(1.0f), transforms->scale);
+				collider->setTransforms(translation * rotation * scale);
 			}
-		);
+		}
 
 		SOMBRA_DEBUG_LOG << "Detecting collisions between the colliders";
 		mCollisionWorld.update();

@@ -32,6 +32,43 @@ namespace se::app {
 	}
 
 
+	void ConstraintsSystem::onNewEntity(Entity entity)
+	{
+		auto [transforms, rb] = mEntityDatabase.getComponents<TransformsComponent, physics::RigidBody>(entity);
+		if (!rb) {
+			SOMBRA_WARN_LOG << "Entity " << entity << " couldn't be added as RigidBody";
+			return;
+		}
+
+		if (transforms) {
+			// The RigidBody initial data is overridden by the entity one
+			rb->getData().position			= transforms->position;
+			rb->getData().linearVelocity	= transforms->velocity;
+			rb->getData().orientation		= transforms->orientation;
+			rb->synchWithData();
+		}
+
+		mPhysicsEngine.addRigidBody(rb);
+		mEntities.push_back(entity);
+		SOMBRA_INFO_LOG << "Entity " << entity << " with RigidBody " << rb << " added successfully";
+	}
+
+
+	void ConstraintsSystem::onRemoveEntity(Entity entity)
+	{
+		auto [rb] = mEntityDatabase.getComponents<physics::RigidBody>(entity);
+		if (!rb) {
+			SOMBRA_WARN_LOG << "Entity " << entity << " wasn't removed";
+			return;
+		}
+
+		auto it = std::find(mEntities.begin(), mEntities.end(), entity);
+		std::swap(*it, mEntities.back());
+		mEntities.pop_back();
+		SOMBRA_INFO_LOG << "Entity " << entity << " removed successfully";
+	}
+
+
 	void ConstraintsSystem::update()
 	{
 		SOMBRA_INFO_LOG << "Start";
@@ -39,8 +76,9 @@ namespace se::app {
 		mPhysicsEngine.resetRigidBodiesState();
 
 		SOMBRA_DEBUG_LOG << "Updating the RigidBodies";
-		mEntityDatabase.iterateComponents<TransformsComponent, physics::RigidBody>(
-			[this](Entity, TransformsComponent* transforms, physics::RigidBody* rigidBody) {
+		for (auto entity : mEntities) {
+			auto [transforms, rigidBody] = mEntityDatabase.getComponents<TransformsComponent, physics::RigidBody>(entity);
+			if (transforms) {
 				// Skip the Entity physics change in the doDynamics step
 				auto updatedWithoutPhysics = transforms->updated;
 				updatedWithoutPhysics.reset( static_cast<int>(TransformsComponent::Update::Physics) );
@@ -51,7 +89,7 @@ namespace se::app {
 					rigidBody->synchWithData();
 				}
 			}
-		);
+		}
 
 		SOMBRA_DEBUG_LOG << "Updating the NormalConstraints time";
 		for (auto& pair : mManifoldConstraintsMap) {
@@ -64,16 +102,15 @@ namespace se::app {
 		mPhysicsEngine.solveConstraints(mDeltaTime);
 
 		SOMBRA_DEBUG_LOG << "Updating the Entities";
-		mEntityDatabase.iterateComponents<TransformsComponent, physics::RigidBody>(
-			[this](Entity, TransformsComponent* transforms, physics::RigidBody* rigidBody) {
-				if (rigidBody->checkState(physics::RigidBodyState::ConstraintsSolved)) {
-					transforms->position	= rigidBody->getData().position;
-					transforms->velocity	= rigidBody->getData().linearVelocity;
-					transforms->orientation	= rigidBody->getData().orientation;
-					transforms->updated.set( static_cast<int>(TransformsComponent::Update::Physics) );
-				}
+		for (auto entity : mEntities) {
+			auto [transforms, rigidBody] = mEntityDatabase.getComponents<TransformsComponent, physics::RigidBody>(entity);
+			if (transforms && rigidBody->checkState(physics::RigidBodyState::ConstraintsSolved)) {
+				transforms->position	= rigidBody->getData().position;
+				transforms->velocity	= rigidBody->getData().linearVelocity;
+				transforms->orientation	= rigidBody->getData().orientation;
+				transforms->updated.set( static_cast<int>(TransformsComponent::Update::Physics) );
 			}
-		);
+		}
 
 		SOMBRA_DEBUG_LOG << "Putting the RigidBodies to sleep";
 		mPhysicsEngine.checkSleepyRigidBodies(mDeltaTime);

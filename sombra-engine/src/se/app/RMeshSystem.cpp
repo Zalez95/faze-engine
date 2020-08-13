@@ -11,6 +11,7 @@ namespace se::app {
 	RMeshSystem::RMeshSystem(EntityDatabase& entityDatabase, graphics::GraphicsEngine& graphicsEngine, CameraSystem& cameraSystem) :
 		ISystem(entityDatabase), mGraphicsEngine(graphicsEngine), mCameraSystem(cameraSystem)
 	{
+		mEntities.reserve(mEntityDatabase.getMaxEntities());
 		mEntityDatabase.addSystem(this, EntityDatabase::ComponentMask().set<graphics::RenderableMesh>());
 	}
 
@@ -62,6 +63,7 @@ namespace se::app {
 		}); });
 
 		mGraphicsEngine.addRenderable(rMesh);
+		mEntities.push_back(entity);
 		SOMBRA_INFO_LOG << "Entity " << entity << " with RenderableMesh " << rMesh << " added successfully";
 	}
 
@@ -74,12 +76,15 @@ namespace se::app {
 			return;
 		}
 
-		auto it = mRenderableMeshEntities.find(entity);
-		if (it != mRenderableMeshEntities.end()) {
-			mRenderableMeshEntities.erase(it);
+		auto itRM = mRenderableMeshEntities.find(entity);
+		if (itRM != mRenderableMeshEntities.end()) {
+			mRenderableMeshEntities.erase(itRM);
 		}
 
 		mGraphicsEngine.removeRenderable(rMesh);
+		auto it = std::find(mEntities.begin(), mEntities.end(), entity);
+		std::swap(*it, mEntities.back());
+		mEntities.pop_back();
 		SOMBRA_INFO_LOG << "Mesh Entity " << entity << " removed successfully";
 	}
 
@@ -88,25 +93,24 @@ namespace se::app {
 	{
 		SOMBRA_DEBUG_LOG << "Updating the Meshes";
 
-		mEntityDatabase.iterateComponents<TransformsComponent, Skin>(
-			[&](Entity entity, TransformsComponent* transforms, Skin* skin) {
-				if (transforms->updated.any()) {
-					auto& meshData = mRenderableMeshEntities[entity];
+		for (auto entity : mEntities) {
+			auto [transforms, skin] = mEntityDatabase.getComponents<TransformsComponent, Skin>(entity);
+			if (transforms && transforms->updated.any()) {
+				auto& meshData = mRenderableMeshEntities[entity];
 
-					glm::mat4 translation	= glm::translate(glm::mat4(1.0f), transforms->position);
-					glm::mat4 rotation		= glm::mat4_cast(transforms->orientation);
-					glm::mat4 scale			= glm::scale(glm::mat4(1.0f), transforms->scale);
-					glm::mat4 modelMatrix	= translation * rotation * scale;
+				glm::mat4 translation	= glm::translate(glm::mat4(1.0f), transforms->position);
+				glm::mat4 rotation		= glm::mat4_cast(transforms->orientation);
+				glm::mat4 scale			= glm::scale(glm::mat4(1.0f), transforms->scale);
+				glm::mat4 modelMatrix	= translation * rotation * scale;
 
-					meshData.modelMatrix->setValue(modelMatrix);
-					if (skin) {
-						auto jointMatrices = calculateJointMatrices(*skin, modelMatrix);
-						std::size_t numJoints = std::min(jointMatrices.size(), static_cast<std::size_t>(kMaxJoints));
-						meshData.jointMatrices->setValue(jointMatrices.data(), numJoints);
-					}
+				meshData.modelMatrix->setValue(modelMatrix);
+				if (skin) {
+					auto jointMatrices = calculateJointMatrices(*skin, modelMatrix);
+					std::size_t numJoints = std::min(jointMatrices.size(), static_cast<std::size_t>(kMaxJoints));
+					meshData.jointMatrices->setValue(jointMatrices.data(), numJoints);
 				}
 			}
-		);
+		}
 
 		SOMBRA_INFO_LOG << "Update end";
 	}

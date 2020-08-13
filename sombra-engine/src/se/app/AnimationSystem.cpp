@@ -9,6 +9,7 @@ namespace se::app {
 		ISystem(entityDatabase), mAnimationEngine(animationEngine)
 	{
 		mRootNode = std::make_unique<animation::AnimationNode>( animation::NodeData("AnimationSystem") );
+		mEntities.reserve(mEntityDatabase.getMaxEntities());
 		mEntityDatabase.addSystem(this, EntityDatabase::ComponentMask().set<animation::AnimationNode>());
 	}
 
@@ -36,6 +37,8 @@ namespace se::app {
 		}
 
 		//TODO:mRootNode->insert(mRootNode->cbegin(), std::move(node));
+
+		mEntities.push_back(entity);
 		SOMBRA_INFO_LOG << "Entity " << entity << " with AnimationNode " << node << " added successfully";
 	}
 
@@ -55,6 +58,9 @@ namespace se::app {
 			mRootNode->erase(itNode);
 		}*/
 
+		auto it = std::find(mEntities.begin(), mEntities.end(), entity);
+		std::swap(*it, mEntities.back());
+		mEntities.pop_back();
 		SOMBRA_INFO_LOG << "Entity " << entity << " removed successfully";
 	}
 
@@ -94,17 +100,16 @@ namespace se::app {
 		mAnimationEngine.update(mDeltaTime);
 
 		// Update the Entities with the changes made to the AnimationNode
-		mEntityDatabase.iterateComponents<TransformsComponent, animation::AnimationNode>(
-			[this](Entity, TransformsComponent* transforms, animation::AnimationNode* node) {
-				animation::NodeData& nodeData = node->getData();
-				if (nodeData.animated) {
-					transforms->position = nodeData.worldTransforms.position;
-					transforms->orientation = nodeData.worldTransforms.orientation;
-					transforms->scale = nodeData.worldTransforms.scale;
-					transforms->updated.set( static_cast<int>(TransformsComponent::Update::Animation) );
-				}
+		for (auto entity : mEntities) {
+			auto [transforms, node] = mEntityDatabase.getComponents<TransformsComponent, animation::AnimationNode>(entity);
+			animation::NodeData& nodeData = node->getData();
+			if (transforms && nodeData.animated) {
+				transforms->position = nodeData.worldTransforms.position;
+				transforms->orientation = nodeData.worldTransforms.orientation;
+				transforms->scale = nodeData.worldTransforms.scale;
+				transforms->updated.set( static_cast<int>(TransformsComponent::Update::Animation) );
 			}
-		);
+		}
 
 		SOMBRA_INFO_LOG << "End";
 	}

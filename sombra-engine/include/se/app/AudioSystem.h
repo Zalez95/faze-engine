@@ -19,6 +19,9 @@ namespace se::app {
 		/** The listener entity of the AudioSystem */
 		Entity mListener;
 
+		/** The Entities to update */
+		std::vector<Entity> mEntities;
+
 	public:		// Functions
 		/** Creates a new AudioSystem
 		 *

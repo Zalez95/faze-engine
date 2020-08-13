@@ -44,6 +44,9 @@ namespace se::app {
 		};
 
 	private:	// Attributes
+		/** The Entities to update */
+		std::vector<Entity> mEntities;
+
 		/** The passes added to the CameraSystem */
 		std::vector<PassData> mPassesData;
 

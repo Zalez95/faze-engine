@@ -57,6 +57,9 @@ namespace se::app {
 		/** The Engine used for updating the data of the PhysicsEntities */
 		physics::PhysicsEngine& mPhysicsEngine;
 
+		/** The Entities to update */
+		std::vector<Entity> mEntities;
+
 		/** The NormalConstraints generated as a consecuence of the
 		 * PhysicsEntities collisions */
 		std::map<const collision::Manifold*, ManifoldConstraints>
@@ -83,6 +86,18 @@ namespace se::app {
 		 *
 		 * @param	event the IEvent to notify */
 		virtual void notify(const IEvent& event) override;
+
+		/** Function that the EntityDatabase will call when an Entity is
+		 * added
+		 *
+		 * @param	entity the new Entity */
+		virtual void onNewEntity(Entity entity);
+
+		/** Function that the EntityDatabase will call when an Entity is
+		 * removed
+		 *
+		 * @param	entity the Entity to remove */
+		virtual void onRemoveEntity(Entity entity);
 
 		/** Solves the Constraints between the RigidBodies of the entities
 		 *

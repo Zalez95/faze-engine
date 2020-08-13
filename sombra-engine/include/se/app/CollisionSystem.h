@@ -23,6 +23,9 @@ namespace se::app {
 		 * the Colliders */
 		collision::CollisionWorld& mCollisionWorld;
 
+		/** The Entities to update */
+		std::vector<Entity> mEntities;
+
 	public:		// Functions
 		/** Creates a new CollisionSystem
 		 *

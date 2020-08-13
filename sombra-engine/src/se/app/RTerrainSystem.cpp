@@ -12,6 +12,7 @@ namespace se::app {
 		EntityDatabase& entityDatabase, graphics::GraphicsEngine& graphicsEngine, CameraSystem& cameraSystem
 	) : ISystem(entityDatabase), mGraphicsEngine(graphicsEngine), mCameraSystem(cameraSystem)
 	{
+		mEntities.reserve(mEntityDatabase.getMaxEntities());
 		mEntityDatabase.addSystem(this, EntityDatabase::ComponentMask().set<graphics::RenderableTerrain>());
 	}
 
@@ -58,6 +59,7 @@ namespace se::app {
 		}
 
 		mGraphicsEngine.addRenderable(rTerrain);
+		mEntities.push_back(entity);
 		SOMBRA_INFO_LOG << "Entity " << entity << " with RenderableTerrain " << rTerrain << " added successfully";
 	}
 
@@ -70,12 +72,15 @@ namespace se::app {
 			return;
 		}
 
-		auto it = mRenderableTerrainEntities.find(entity);
-		if (it != mRenderableTerrainEntities.end()) {
-			mRenderableTerrainEntities.erase(it);
+		auto itRT = mRenderableTerrainEntities.find(entity);
+		if (itRT != mRenderableTerrainEntities.end()) {
+			mRenderableTerrainEntities.erase(itRT);
 		}
 
 		mGraphicsEngine.removeRenderable(rTerrain);
+		auto it = std::find(mEntities.begin(), mEntities.end(), entity);
+		std::swap(*it, mEntities.back());
+		mEntities.pop_back();
 		SOMBRA_INFO_LOG << "Terrain Entity " << entity << " removed successfully";
 	}
 
@@ -84,24 +89,23 @@ namespace se::app {
 	{
 		SOMBRA_DEBUG_LOG << "Updating the Terrains";
 
-		mEntityDatabase.iterateComponents<TransformsComponent, graphics::RenderableTerrain>(
-			[&](Entity entity, TransformsComponent* transforms, graphics::RenderableTerrain* rTerrain) {
-				if (transforms->updated.any()) {
-					auto& terrainData = mRenderableTerrainEntities[entity];
+		for (auto entity : mEntities) {
+			auto [transforms, rTerrain] = mEntityDatabase.getComponents<TransformsComponent, graphics::RenderableTerrain>(entity);
+			if (transforms && transforms->updated.any()) {
+				auto& terrainData = mRenderableTerrainEntities[entity];
 
-					glm::mat4 translation	= glm::translate(glm::mat4(1.0f), transforms->position);
-					glm::mat4 rotation		= glm::mat4_cast(transforms->orientation);
-					glm::mat4 scale			= glm::scale(glm::mat4(1.0f), transforms->scale);
-					glm::mat4 modelMatrix	= translation * rotation * scale;
+				glm::mat4 translation	= glm::translate(glm::mat4(1.0f), transforms->position);
+				glm::mat4 rotation		= glm::mat4_cast(transforms->orientation);
+				glm::mat4 scale			= glm::scale(glm::mat4(1.0f), transforms->scale);
+				glm::mat4 modelMatrix	= translation * rotation * scale;
 
-					terrainData.modelMatrix->setValue(modelMatrix);
-				}
-
-				if (mCameraSystem.getActiveCamera() && mCameraSystem.wasCameraUpdated()) {
-					rTerrain->setHighestLodLocation(mCameraSystem.getActiveCamera()->getPosition());
-				}
+				terrainData.modelMatrix->setValue(modelMatrix);
 			}
-		);
+
+			if (mCameraSystem.getActiveCamera() && mCameraSystem.wasCameraUpdated()) {
+				rTerrain->setHighestLodLocation(mCameraSystem.getActiveCamera()->getPosition());
+			}
+		}
 
 		SOMBRA_INFO_LOG << "Update end";
 	}
