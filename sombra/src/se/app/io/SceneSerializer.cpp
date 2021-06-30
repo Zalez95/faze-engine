@@ -1001,10 +1001,10 @@ namespace se::app {
 				}
 			}
 			else if (auto setOperation = std::dynamic_pointer_cast<SetOperation>(bindable)) {
-				bindableJson = { { "type", "SetOperation" }, { "operation", static_cast<int>(setOperation->getOperation()) }, { "active", setOperation->isEnabled() } };
+				bindableJson = { { "type", "SetOperation" }, { "operation", static_cast<int>(setOperation->getOperation()) }, { "active", setOperation->getEnable() } };
 			}
 			else if (auto setDepthMask = std::dynamic_pointer_cast<SetDepthMask>(bindable)) {
-				bindableJson = { { "type", "SetDepthMask" }, { "active", setDepthMask->isEnabled() } };
+				bindableJson = { { "type", "SetDepthMask" }, { "active", setDepthMask->getEnable() } };
 			}
 
 			if (!bindableJson.empty()) {

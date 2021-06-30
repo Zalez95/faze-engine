@@ -1,7 +1,6 @@
 #ifndef SHADOW_SYSTEM_H
 #define SHADOW_SYSTEM_H
 
-#include "graphics/DeferredLightRenderer.h"
 #include "events/ContainerEvent.h"
 #include "events/RMeshEvent.h"
 #include "events/ShaderEvent.h"
@@ -14,6 +13,8 @@ namespace se::app {
 	class Application;
 	class MeshComponent;
 	class TerrainComponent;
+	class ShadowRenderSubGraph;
+	class DeferredLightRenderer;
 
 
 	/**
@@ -36,8 +37,12 @@ namespace se::app {
 		/** The Entity that holds the current light that creates the shadows */
 		Entity mShadowEntity;
 
-		/** The objects used for rendering each the shadow */
-		std::vector<Shadow> mShadows;
+		/** The configuration used for rendering the Shadows */
+		ShadowData mShadowData;
+
+		/** A pointer to the ShadowRenderSubGraph used for rendering the
+		 * Shadows */
+		ShadowRenderSubGraph* mShadowRenderSubGraph;
 
 		/** A pointer to the deferred light renderer used for computing the
 		 * lighting */

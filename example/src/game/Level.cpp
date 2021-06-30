@@ -32,6 +32,7 @@
 
 #include <se/graphics/Renderer.h>
 #include <se/graphics/3D/RenderableMesh.h>
+#include <se/graphics/core/UniformVariable.h>
 #include <se/graphics/core/GraphicsOperations.h>
 
 #include <se/collision/BoundingBox.h>

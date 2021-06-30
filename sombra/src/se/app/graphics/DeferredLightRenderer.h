@@ -1,12 +1,12 @@
 #ifndef DEFERRED_LIGHT_RENDERER_H
 #define DEFERRED_LIGHT_RENDERER_H
 
-#include "../Repository.h"
-#include "../../graphics/BindableRenderNode.h"
-#include "../../graphics/core/Program.h"
-#include "../../graphics/core/UniformVariable.h"
-#include "../../graphics/core/UniformBuffer.h"
-#include "../../graphics/3D/Mesh.h"
+#include "se/graphics/BindableRenderNode.h"
+#include "se/graphics/core/Program.h"
+#include "se/graphics/core/UniformVariable.h"
+#include "se/graphics/core/UniformBuffer.h"
+#include "se/graphics/3D/Mesh.h"
+#include "se/app/Repository.h"
 
 namespace se::app {
 

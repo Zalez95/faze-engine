@@ -85,37 +85,26 @@ namespace se::app {
 		 * The nodes and connections that will be added to the graph looks like
 		 * the following (the resource node already exists):
 		 *
-		 *  [    "resources"    ]                   |attach
-		 *     |shadowBuffer  |shadowTexture   ["startShadow"]
-		 *     |              |                     |attach
-		 *     |input         |                     |
-		 *  ["shadowFBClear"] |           __________|
-		 *     |output        |          |
-		 *     |              |          |
-		 *     |target        |shadow    |attach
-		 *  [    "shadowRendererTerrain"    ]
-		 *     |target        |shadow
-		 *     |              |
-		 *     |target        |shadow
-		 *  [    "shadowRendererMesh"    ]
-		 *     |target        |shadow  |attach
-		 *     |              |        |
-		 *     |              |        |attach
-		 *     |              |   ["endShadow"]
-		 *     |              |        |attach
+		 *  [        "resources"        ]     |                   |attach
+		 *     |shadowTexture |shadowBuffer   |attach  ["shadowRendererTerrain"]
+		 *     |              |        ["shadowRendererMesh"]     |attach
+		 *     |      ["shadowFBClear"]       |attach             |
+		 *     |              |               |____               |
+		 *     |              |__________         |               |
+		 *     |                        |target   |attach1        |attach2
+		 *     |                     [    "shadowRenderSubGraph"    ]
+		 *     |                                   |target
 		 *
-		 * @note	Any node that should be executed prior to the shadow
-		 *			Renderer3Ds must be attached to the "startShadow" "input"
-		 *			and any node that should be executed after them should be
-		 *			attached to the "endShadow" "output"
-		 *
+		 * @param	repository the Repository that holds the Resources
 		 * @param	width the initial width of the FrameBuffer where the
 		 *			Entities are going to be rendered
 		 * @param	height the initial height of the FrameBuffer where the
 		 *			Entities are going to be rendered
 		 * @return	true if the nodes where added successfully, false
 		 *			otherwise */
-		bool addShadowRenderers(std::size_t width, std::size_t height);
+		bool addShadowRenderers(
+			Repository& repository, std::size_t width, std::size_t height
+		);
 
 		/** Creates a deferred renderer with the following GBuffer Renderer3Ds:
 		 *	"gBufferRendererTerrain" - renders RenderableTerrains

@@ -82,7 +82,10 @@ namespace se::graphics {
 
 	void RenderGraph::clearNodes()
 	{
-		mRenderNodes.clear();
+		while (!mRenderNodes.empty()) {
+			mRenderNodes.back()->disconnect();
+			mRenderNodes.pop_back();
+		}
 	}
 
 

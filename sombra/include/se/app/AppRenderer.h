@@ -5,13 +5,13 @@
 #include "../graphics/core/Texture.h"
 #include "events/ContainerEvent.h"
 #include "events/ResizeEvent.h"
-#include "graphics/DeferredLightRenderer.h"
 #include "ECS.h"
 #include "LightComponent.h"
 
 namespace se::app {
 
 	class Application;
+	class DeferredLightRenderer;
 
 
 	/**

@@ -8,6 +8,7 @@
 #include "se/app/Application.h"
 #include "se/app/TransformsComponent.h"
 #include "se/app/events/ContainerEvent.h"
+#include "se/app/graphics/DeferredLightRenderer.h"
 
 namespace se::app {
 
