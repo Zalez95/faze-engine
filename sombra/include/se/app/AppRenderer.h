@@ -60,14 +60,12 @@ namespace se::app {
 		 *
 		 * @param	application a reference to the Application that holds the
 		 *			current System
-		 * @param	shadowData the configuration used for rendering the shadows
 		 * @param	width the initial width of the FrameBuffer where the
 		 *			Entities are going to be rendered
 		 * @param	height the initial height of the FrameBuffer where the
 		 *			Entities are going to be rendered */
 		AppRenderer(
-			Application& application, const ShadowData& shadowData,
-			std::size_t width, std::size_t height
+			Application& application, std::size_t width, std::size_t height
 		);
 
 		/** Class destructor */

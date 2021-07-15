@@ -3,7 +3,6 @@
 
 #include "../../graphics/RenderGraph.h"
 #include "se/app/Repository.h"
-#include "se/app/LightComponent.h"
 
 namespace se::app {
 
@@ -26,14 +25,12 @@ namespace se::app {
 		/** Creates a new AppRenderGraph
 		 *
 		 * @param	repository the Repository that holds the Resources
-		 * @param	shadowData the configuration used for rendering the shadows
 		 * @param	width the initial width of the FrameBuffers where the
 		 *			Renderables will be drawn
 		 * @param	height the initial height of the FrameBuffers where the
 		 *			Renderables will be drawn */
 		AppRenderGraph(
-			Repository& repository, const ShadowData& shadowData,
-			std::size_t width, std::size_t height
+			Repository& repository, std::size_t width, std::size_t height
 		);
 
 		/** Class destructor */
@@ -51,7 +48,6 @@ namespace se::app {
 		/** Adds shared resources to the RenderGraph resource node
 		 *
 		 * @param	repository the Repository that holds the Resources
-		 * @param	shadowData the configuration used for rendering the shadows
 		 * @param	width the initial width of the FrameBuffer where the
 		 *			Entities are going to be rendered
 		 * @param	height the initial height of the FrameBuffer where the
@@ -59,8 +55,7 @@ namespace se::app {
 		 * @return	true if the resources were added succesfully,
 		 *			false otherwise */
 		bool addResources(
-			Repository& repository, const ShadowData& shadowData,
-			std::size_t width, std::size_t height
+			Repository& repository, std::size_t width, std::size_t height
 		);
 
 		/** Adds nodes to the RenderGraph and links them. It will add:

@@ -134,7 +134,7 @@ namespace se::app {
 			glm::mat4 viewProjectionMatrix = mCamera->getProjectionMatrix() * mCamera->getViewMatrix();
 			mFrustumFilter->updateFrustum(viewProjectionMatrix);
 			mDeferredLightRenderer->setViewPosition(mCamera->getPosition());
-			mShadowRenderSubGraph->setCameraViewProjectionMatrix(viewProjectionMatrix);
+			mShadowRenderSubGraph->setInvCameraViewProjectionMatrix(glm::inverse(viewProjectionMatrix));
 		}
 
 		SOMBRA_INFO_LOG << "Update end";

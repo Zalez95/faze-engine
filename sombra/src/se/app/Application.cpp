@@ -139,7 +139,7 @@ namespace se::app {
 
 			mInputSystem = new InputSystem(*this);
 			mScriptSystem = new ScriptSystem(*this);
-			mAppRenderer = new AppRenderer(*this, shadowData, windowConfig.width, windowConfig.height);
+			mAppRenderer = new AppRenderer(*this, windowConfig.width, windowConfig.height);
 			mCameraSystem = new CameraSystem(*this);
 			mShadowSystem = new ShadowSystem(*this, shadowData);
 			mMeshSystem = new MeshSystem(*this);

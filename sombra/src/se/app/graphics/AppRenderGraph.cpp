@@ -77,9 +77,9 @@ namespace se::app {
 	};
 
 
-	AppRenderGraph::AppRenderGraph(Repository& repository, const ShadowData& shadowData, std::size_t width, std::size_t height)
+	AppRenderGraph::AppRenderGraph(Repository& repository, std::size_t width, std::size_t height)
 	{
-		if (!addResources(repository, shadowData, width, height)) {
+		if (!addResources(repository, width, height)) {
 			throw std::runtime_error("Failed to add resources");
 		}
 		if (!addNodes(repository, width, height)) {
@@ -122,7 +122,7 @@ namespace se::app {
 	}
 
 // Private functions
-	bool AppRenderGraph::addResources(Repository& repository, const ShadowData& shadowData, std::size_t width, std::size_t height)
+	bool AppRenderGraph::addResources(Repository& repository, std::size_t width, std::size_t height)
 	{
 		auto resources = dynamic_cast<BindableRenderNode*>(getNode("resources"));
 
@@ -161,7 +161,7 @@ namespace se::app {
 		}
 
 		auto shadowTexture = std::make_shared<Texture>(TextureTarget::Texture2D);
-		shadowTexture->setImage(nullptr, TypeId::Float, ColorFormat::Depth, ColorFormat::Depth, shadowData.resolution, shadowData.resolution)
+		shadowTexture->setImage(nullptr, TypeId::Float, ColorFormat::Depth, ColorFormat::Depth, width, height)
 			.setWrapping(TextureWrap::ClampToBorder, TextureWrap::ClampToBorder)
 			.setBorderColor(1.0f, 1.0f, 1.0f, 1.0f)
 			.setFiltering(TextureFilter::Nearest, TextureFilter::Nearest);
@@ -170,6 +170,18 @@ namespace se::app {
 		if (!resources->addOutput( std::make_unique<BindableRNodeOutput<Texture>>("shadowTexture", resources, iShadowTextureResource) )) {
 			return false;
 		}
+
+		//TODO:
+		auto colorTextureshadow = std::make_shared<Texture>(TextureTarget::Texture2D);
+		colorTextureshadow->setImage(nullptr, TypeId::Float, ColorFormat::RGBA, ColorFormat::RGBA16f, width, height)
+			.setWrapping(TextureWrap::ClampToEdge, TextureWrap::ClampToEdge)
+			.setFiltering(TextureFilter::Linear, TextureFilter::Linear);
+		shadowBuffer->attach(*colorTextureshadow, FrameBufferAttachment::kColor0);
+		auto iColorTextureResourceShadow = resources->addBindable(colorTextureshadow);
+		if (!resources->addOutput( std::make_unique<BindableRNodeOutput<Texture>>("colorTextureshadow", resources, iColorTextureResourceShadow) )) {
+			return false;
+		}
+		//\TODO:
 
 		auto gBuffer = std::make_shared<FrameBuffer>();
 		auto iGBufferResource = resources->addBindable(gBuffer);
@@ -451,8 +463,8 @@ namespace se::app {
 
 	bool AppRenderGraph::addShadowRenderers(Repository& repository, std::size_t width, std::size_t height)
 	{
-		// Create the nodes
-		auto shadowFBClear = std::make_unique<FBClearNode>("shadowFBClear", FrameBufferMask::Mask().set(FrameBufferMask::kDepth));
+		// Create the nodesTODO:color
+		auto shadowFBClear = std::make_unique<FBClearNode>("shadowFBClear", FrameBufferMask::Mask().set(FrameBufferMask::kColor).set(FrameBufferMask::kDepth));
 		auto shadowDepthTexUnitNode = std::make_unique<TextureUnitNode>("shadowDepthTexUnitNode", MergeShadowsNode::kDepthTextureUnit);
 
 		auto shadowRenderSubGraph = std::make_unique<ShadowRenderSubGraph>("shadowRenderSubGraph", repository);

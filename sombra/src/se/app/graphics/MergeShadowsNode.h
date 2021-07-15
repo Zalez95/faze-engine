@@ -44,9 +44,9 @@ namespace se::app {
 		/** The plane used for rendering */
 		Repository::ResourceRef<graphics::Mesh> mPlane;
 
-		/** Camera view projection matrix uniform variable */
+		/** The inverse of the Camera view projection matrix uniform variable */
 		std::shared_ptr<graphics::UniformVariableValue<glm::mat4>>
-			mCameraViewProjectionMatrix;
+			mInvCameraViewProjectionMatrix;
 
 		/** The Shadows uniforms */
 		std::array<ShadowUniforms, kMaxShadows> mShadows;
@@ -58,13 +58,13 @@ namespace se::app {
 		 * @param	repository the Repository that holds the Resources */
 		MergeShadowsNode(const std::string& name, Repository& repository);
 
-		/** Sets the view projection matrix of the camera used for rendering
-		 * the scene
+		/** Sets the inverse view projection matrix of the camera used for
+		 * rendering the scene
 		 *
-		 * @param	viewProjectionMatrix the new camera view projection
-		 *			matrix */
-		void setCameraVPMatrix(const glm::mat4& viewProjectionMatrix)
-		{ mCameraViewProjectionMatrix->setValue(viewProjectionMatrix); };
+		 * @param	invViewProjectionMatrix the new inverse camera view
+		 *			projection matrix */
+		void setInvCameraVPMatrix(const glm::mat4& invViewProjectionMatrix)
+		{ mInvCameraViewProjectionMatrix->setValue(invViewProjectionMatrix); };
 
 		/** Enables or disables a Shadow
 		 *

@@ -75,19 +75,29 @@ namespace se::app {
 
 	void ShadowSystem::update()
 	{
-		SOMBRA_DEBUG_LOG << "Updating the Cameras";
-
-		/*auto [transforms] = mEntityDatabase.getComponents<TransformsComponent>(mShadowEntity, true);
-		if (transforms && !transforms->updated[static_cast<int>(TransformsComponent::Update::Shadow)]) {
-			mShadows[0].camera.setPosition(transforms->position);
-			mShadows[0].camera.setOrientation(transforms->orientation);
-			transforms->updated.set(static_cast<int>(TransformsComponent::Update::Shadow));
-		}*/
-
 		SOMBRA_DEBUG_LOG << "Updating the Renderers";
-		/*glm::mat4 viewProjectionMatrix = mShadows[0].camera.getProjectionMatrix() * mShadows[0].camera.getViewMatrix();
-		mShadows[0].frustum->updateFrustum(viewProjectionMatrix);
-		mDeferredLightRenderer->setShadowViewProjectionMatrix(viewProjectionMatrix);*/
+
+		auto [transforms, light] = mEntityDatabase.getComponents<TransformsComponent, LightComponent>(mShadowEntity, true);
+		if (transforms && light) {
+			CameraComponent camera;
+			camera.setPosition(transforms->position);
+			camera.setOrientation(transforms->orientation);
+			if (light->source->type == LightSource::Type::Directional) {
+				camera.setOrthographicProjection(
+					-mShadowData.size, mShadowData.size, -mShadowData.size, mShadowData.size,
+					mShadowData.zNear, mShadowData.zFar
+				);
+			}
+			else if (light->source->type == LightSource::Type::Spot) {
+				camera.setPerspectiveProjection(
+					glm::radians(45.0f), 1.0f,
+					mShadowData.zNear, mShadowData.zFar
+				);
+			}
+			mShadowRenderSubGraph->setShadowVPMatrix(0, camera.getViewMatrix(), camera.getProjectionMatrix());
+
+			transforms->updated.set(static_cast<int>(TransformsComponent::Update::Shadow));
+		}
 
 		SOMBRA_INFO_LOG << "Update end";
 	}

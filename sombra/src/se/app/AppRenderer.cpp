@@ -12,7 +12,7 @@
 
 namespace se::app {
 
-	AppRenderer::AppRenderer(Application& application, const ShadowData& shadowData, std::size_t width, std::size_t height) :
+	AppRenderer::AppRenderer(Application& application, std::size_t width, std::size_t height) :
 		ISystem(application.getEntityDatabase()), mApplication(application),
 		mDeferredLightRenderer(nullptr), mLastIrradianceTexture(nullptr), mLastPrefilterTexture(nullptr),
 		mShadowEntity(kNullEntity), mLightProbeEntity(kNullEntity)
@@ -23,7 +23,7 @@ namespace se::app {
 		mApplication.getEntityDatabase().addSystem(this, EntityDatabase::ComponentMask().set<LightComponent>().set<LightProbe>());
 
 		SOMBRA_INFO_LOG << graphics::GraphicsOperations::getGraphicsInfo();
-		auto graph = std::make_unique<AppRenderGraph>(application.getRepository(), shadowData, width, height);
+		auto graph = std::make_unique<AppRenderGraph>(application.getRepository(), width, height);
 		mDeferredLightRenderer = dynamic_cast<DeferredLightRenderer*>(graph->getNode("deferredLightRenderer"));
 		mApplication.getExternalTools().graphicsEngine->setRenderGraph(std::move(graph));
 

@@ -19,9 +19,10 @@ in vec3 vsPosition;
 
 // Uniform variables
 uniform sampler2D uDepthTexture;
-uniform mat4 uCameraViewProjectionMatrix;
+uniform mat4 uInvCameraViewProjectionMatrix;
 uniform Shadow uShadows[MAX_SHADOWS];
 
+layout (location = 0) out vec4 oColor;//TODO:
 
 // ____ FUNCTION DEFINITIONS ____
 /*  Returns the location in world space of the vertex located at the given
@@ -32,7 +33,7 @@ vec3 decodeLocation(vec2 texCoords)
 	clipSpaceLocation.xy = 2.0 * texCoords - 1.0;
 	clipSpaceLocation.z = 2.0 * texture(uDepthTexture, texCoords).r - 1.0;
 	clipSpaceLocation.w = 1.0;
-	vec4 homogenousLocation = uCameraViewProjectionMatrix * clipSpaceLocation;
+	vec4 homogenousLocation = uInvCameraViewProjectionMatrix * clipSpaceLocation;
 	return homogenousLocation.xyz / homogenousLocation.w;
 }
 
@@ -68,5 +69,7 @@ void main()
 		}
 	}
 
+	//TODO:
+	oColor = vec4(position, shadow);
 	gl_FragDepth = shadow;
 }

@@ -45,15 +45,15 @@ namespace se::app {
 			return;
 		}
 
-		mCameraViewProjectionMatrix = std::make_shared<UniformVariableValue<glm::mat4>>("uCameraViewProjectionMatrix", mProgram.get());
+		mInvCameraViewProjectionMatrix = std::make_shared<UniformVariableValue<glm::mat4>>("uInvCameraViewProjectionMatrix", mProgram.get());
 
 		addBindable(mProgram.get());
 		addBindable(std::make_shared<SetDepthMask>(false));
-		addBindable(std::make_shared<UniformVariableValue<glm::mat4>>("uModelMatrix", mProgram.get()));
-		addBindable(std::make_shared<UniformVariableValue<glm::mat4>>("uViewMatrix", mProgram.get()));
-		addBindable(std::make_shared<UniformVariableValue<glm::mat4>>("uProjectionMatrix", mProgram.get()));
+		addBindable(std::make_shared<UniformVariableValue<glm::mat4>>("uModelMatrix", mProgram.get(), glm::mat4(1.0f)));
+		addBindable(std::make_shared<UniformVariableValue<glm::mat4>>("uViewMatrix", mProgram.get(), glm::mat4(1.0f)));
+		addBindable(std::make_shared<UniformVariableValue<glm::mat4>>("uProjectionMatrix", mProgram.get(), glm::mat4(1.0f)));
 		addBindable(std::make_shared<UniformVariableValue<int>>("uDepthTexture", mProgram.get(), kDepthTextureUnit));
-		addBindable(mCameraViewProjectionMatrix);
+		addBindable(mInvCameraViewProjectionMatrix);
 		for (int i = 0; i < kMaxShadows; ++i) {
 			std::string index = std::to_string(i);
 

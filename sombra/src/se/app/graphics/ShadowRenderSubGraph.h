@@ -123,10 +123,10 @@ namespace se::app {
 		ShadowUniformsUpdater* getShadowUniformsUpdater() const
 		{ return mShadowUniformsUpdater; };
 
-		/** Sets the view projection matrix of the camera
+		/** Sets the inverse view projection matrix of the camera
 		 *
-		 * @param	vpMatrix the new Camera view projection matrix */
-		void setCameraViewProjectionMatrix(const glm::mat4& vpMatrix);
+		 * @param	invVPMatrix the new inverse Camera view projection matrix */
+		void setInvCameraViewProjectionMatrix(const glm::mat4& invVPMatrix);
 
 		/** Sets the resolution used for rendering to the final Shadow
 		 * framebuffer
